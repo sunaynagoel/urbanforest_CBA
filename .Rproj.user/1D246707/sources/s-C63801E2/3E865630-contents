@@ -1,0 +1,671 @@
+---
+title: "Community Analytics"
+output: 
+  flexdashboard::flex_dashboard:
+    storyboard: true
+    social: menu
+    source: embed
+---
+```{r}
+#install.packages1("devtools")
+#devtools::install_github("gadenbuie/lorem")
+```
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(  message=F, warning=F, echo=F )
+#Load in libraries
+library( tidycensus )
+library( tidyverse )
+library( ggplot2 )
+library( plyr )
+library( stargazer )
+library( corrplot )
+library( purrr )
+library( flexdashboard )
+library( leaflet )
+library( mclust )
+library( pander )
+library( DT )
+library(lorem)
+library(sp)
+library(sf)
+library( cartogram )  # spatial maps w/ tract size bias reduction
+library( maptools ) 
+library(tmap)
+library(tmaptools)
+
+```
+
+```{r, quietly=T, include=F}
+census_key <- "8eab9b16f44cb26460ecbde164482194b7052772"
+census_api_key(census_key)
+
+#Loading data 
+URL <- "https://github.com/DS4PS/cpp-529-master/raw/master/data/CensusData.rds"
+census.dats <- readRDS(gzcon(url( URL )))
+census.dats <- na.omit(census.dats)
+
+```
+
+
+<style type="text/css"> .sidebar { overflow: auto; } </style>
+
+
+
+Introduction {.storyboard}
+=========================================
+
+
+
+### Neighborhood Changes in Dallas, TX from 2000 to 2010
+
+```{r}
+leaflet() %>%
+  addTiles(options = providerTileOptions(minZoom = 8, maxZoom = 10)) %>%
+  addMarkers(lng=-96.7970, lat=32.7767, popup="City Center Dallas, TX")
+```
+
+
+***
+
+**Location**: Dallas, TX -- 3rd largest city in Texas and 9th largest in the U.S.    
+**Objectives**: Use cluster analysis to study neighborhood changes in Dallas.   
+**Data**: Census data 2000-2010 at the Census Tract Level. Dallas MSA is spread over Dallas County, Collin County, Denton County, Ellis County, Henderson County, Hunt County, Kaufman County,and Rockwall County.    
+**Process**: To navigate through various stages of predictions, statistical models are used to explore how changes in demographic variables relate to changes in housing prices at the county level. An attempt has been made to detect which cluster groups will be gentrified over the time period.
+
+
+Data {.storyboard}
+=========================================
+
+
+### Data for Dallas County, TX for year 2000 and 2010
+
+
+
+```{r,echo=FALSE}
+
+My.MSA.County <- c("Dallas County", "Collin County", "Denton County","Ellis County","Henderson County", "Hunt County","Kaufman County", "Rockwall County" )
+census.dats <- census.dats %>%
+filter (census.dats$state == "TX")
+census.dats <- census.dats %>%
+ filter (census.dats$county %in% My.MSA.County)
+datatable(census.dats) %>%
+  formatRound('Median.HH.Value00', 3) %>%
+  formatRound('Foreign.Born00', 3) %>%
+  formatRound('Recent.Immigrant00', 3) %>%
+  formatRound('Poor.English00', 3)%>%
+  formatRound('Veteran00', 3)%>%
+  formatRound('Poverty00', 3)%>%
+  formatRound('Poverty.Black00', 3)%>%
+  formatRound('Poverty.White00', 3)%>%
+  formatRound('Poverty.Hispanic00', 3)%>%
+  formatRound('Pop.Black00', 3)%>%
+  formatRound('Pop.Unemp00', 3)%>%
+  formatRound('Pop.Manufact00', 3)%>%
+  formatRound('Pop.Hispanic00', 3)%>%
+  formatRound('Pop.SelfEmp00', 3)%>%
+  formatRound('Pop.Prof00', 3)%>%
+  formatRound('Pop.Prof00', 3)%>%
+  formatRound('Female.LaborForce00', 3)%>%
+formatRound('Median.HH.Value10', 3) %>%
+  formatRound('Foreign.Born10', 3) %>%
+  formatRound('Recent.Immigrant10', 3) %>%
+  formatRound('Poor.English10', 3)%>%
+  formatRound('Veteran10', 3)%>%
+  formatRound('Poverty10', 3)%>%
+  formatRound('Poverty.Black10', 3)%>%
+  formatRound('Poverty.White10', 3)%>%
+  formatRound('Poverty.Hispanic10', 3)%>%
+  formatRound('Pop.Black10', 3)%>%
+  formatRound('Pop.Unemp10', 3)%>%
+  formatRound('Pop.Manufact10', 3)%>%
+  formatRound('Pop.Hispanic10', 3)%>%
+  formatRound('Pop.SelfEmp10', 3)%>%
+  formatRound('Pop.Prof10', 3)%>%
+  formatRound('Pop.Prof10', 3)%>%
+  formatRound('Female.LaborForce10', 3)
+```
+
+### Change Values for Variables from the 2000 to 2010
+
+```{r, echo=T}
+
+censusChange1<-ddply(census.dats,"TRTID10",summarise, 
+       HousePriceChange = Median.HH.Value10/(Median.HH.Value00+1),# Change variable
+       FreignBornChange = Foreign.Born10/(Foreign.Born00 +.01),
+       RecentImmigrantChange = Recent.Immigrant10/(Recent.Immigrant00+.01),
+       PoorEnglishChange = Poor.English10/(Poor.English00+.01),
+       VeteranChange = Veteran10/(Veteran00+.01),
+       PovertyChange = Poverty10/(Poverty00+.01),
+       PovertyBlackChange = Poverty.Black10/(Poverty.Black00+.01),
+       PovertyWhiteChange = Poverty.White10/(Poverty.White00+.01),
+       PovertyHispanicChange = Poverty.Hispanic10/(Poverty.Hispanic00+.01),
+       PopBlackChange = Pop.Black10/(Pop.Black00+.01),
+       PopHispanicChange = Pop.Hispanic10/(Pop.Hispanic00+.01),
+       PopUnempChange = Pop.Unemp10/(Pop.Unemp00+.01),
+       PopManufactChange = Pop.Manufact10/(Pop.Manufact00+.01),
+       PopSelfEmpChange = Pop.SelfEmp10/(Pop.SelfEmp00+.01),
+       PopProfChange = Pop.Prof10/(Pop.Prof00+.01),
+       FemaleLaborForceChange = Female.LaborForce10/(Female.LaborForce00+.01)
+)
+
+censusChange1<-censusChange1[!duplicated(censusChange1$TRTID10),]
+
+```
+
+
+***
+
+**Rate of change** for explanatory variables is calculated from year 2000 to 2010 to make it easier to **visualize overall change** over this time period for Dallas.     
+The following variables are considered for determining rate of change between the two time periods.    
+
+1. Median.HH.Value  
+2. Foreign.Born  
+3. Recent.Immigrant  
+4. Poor.English  
+5. Veteran  
+6. Poverty  
+7. Poverty.Black  
+8. Poverty.White  
+9. Poverty.Hispanic  
+10. Pop.Black  
+11. Pop.Unemp  
+12. Pop.Hispanic  
+13. Pop.Manufact  
+14. Pop.SelfEmp   
+15. Pop.Prof   
+16. Female.LaborForce   
+
+
+
+### View changed Data 
+
+```{r}
+datatable(censusChange1) %>%
+  formatRound('HousePriceChange', 3) %>%
+  formatRound('FreignBornChange', 3) %>%
+  formatRound('RecentImmigrantChange', 3) %>%
+  formatRound('PoorEnglishChange', 3)%>%
+  formatRound('VeteranChange', 3)%>%
+  formatRound('PovertyChange', 3)%>%
+  formatRound('PovertyBlackChange', 3)%>%
+  formatRound('PovertyWhiteChange', 3)%>%
+  formatRound('PovertyHispanicChange', 3)%>%
+  formatRound('PopBlackChange', 3)%>%
+  formatRound('PopUnempChange', 3)%>%
+  formatRound('PopManufactChange', 3)%>%
+  formatRound('PopHispanicChange', 3)%>%
+  formatRound('PopUnempChange', 3)%>%
+  formatRound('PopManufactChange', 3)%>%
+  formatRound('PopSelfEmpChange', 3)%>%
+  formatRound('PopProfChange', 3)%>%
+  formatRound('FemaleLaborForceChange',3)
+```
+
+
+***
+
+Shows the **new changed variables** from 2000 to 2010. 
+
+
+
+
+
+### 5-point summary of changed data
+
+```{r, results='asis',message=F, warning=F, fig.width = 9,fig.align='center', echo=F }
+#Visualize 5-point summary
+censusChange1 %>%
+    keep(is.numeric) %>% 
+stargazer(
+          omit.summary.stat = c("p25", "p75"), nobs=F, type="html") 
+```
+
+
+***
+
+**Descriptive statistics** provides concise summary of distribution of changed variables.  
+Maximum average change is observed in poverty amongst hispanic population, minimum average change is observed in population of veterans.    
+There has been change in average housing price by 1.492   
+The standard deviation is showing how far spread out the data is for a particular variable which will be more clear in the next tab when histogram is produced.
+
+
+
+
+### Histogram 
+
+```{r,message=F, warning=F, echo=F, fig.width=9}
+#Histogram
+censusChange1 %>%
+  keep(is.numeric) %>% 
+  gather() %>% 
+  ggplot(aes(value)) +
+    facet_wrap(~ key, scales = "free") +
+    geom_histogram()
+```
+
+
+***
+
+This tab represents the **numerical distribution** of the variables, which makes it easier to understand the distribution for each of the variables in the dataset at a glance.   
+As an example, Change in **female labor force** has the most symmetric distribution indicating that the female labor force is similiar across all tracts.   
+There are quite a few variables which are **skewed left**, indicating the concentration is not consistent across the tracts.
+
+
+
+### Correlation Plot 
+
+```{r, message=F, warning=F, echo=F, fig.width= 10, fig.height=11}
+train_cor <- cor(censusChange1[,-1])
+
+##Correlation Plot
+corrplot(train_cor, type='lower')
+
+```
+
+
+***
+Correlation Plot shows interactions amongst variables. The level of interactions is represented by the color.  The usefulness of this chart is to understand **multicollinearity**.   
+In this example we can see there is **high correlation** amongst couple of variables, indicating potential problem of **multicollinearity**. PoorEnglishChange and RecentImmigrantChange are highly correlated to ForiegnBornChange. They might be considered colinear.   
+
+Potential **Solution** is to include just one variable of the collinear variables in the regression model.
+
+
+
+
+
+Regressions
+=========================================
+
+
+### Regression Model Results 
+
+```{r, results='asis', fig.align='center'}
+
+reg1<-lm(HousePriceChange ~  FreignBornChange + RecentImmigrantChange + PoorEnglishChange  + VeteranChange + PovertyChange + PovertyBlackChange + PovertyWhiteChange + PovertyHispanicChange + PopBlackChange + PopHispanicChange +
+PopHispanicChange + PopUnempChange +  PopManufactChange +  PopSelfEmpChange + PopProfChange + FemaleLaborForceChange   , data=censusChange1)
+
+reg2 <- lm(HousePriceChange ~  FreignBornChange + PoorEnglishChange + VeteranChange + PovertyChange + PovertyBlackChange + PovertyWhiteChange  + PovertyHispanicChange + PopBlackChange + PopHispanicChange +
+PopHispanicChange + PopUnempChange +  PopManufactChange +  PopSelfEmpChange + PopProfChange + FemaleLaborForceChange   , data=censusChange1)
+
+reg3<-lm(HousePriceChange ~  FreignBornChange + RecentImmigrantChange + PoorEnglishChange  + VeteranChange + PovertyChange + PovertyBlackChange + PovertyWhiteChange + PovertyHispanicChange + PopBlackChange + PopHispanicChange  , data=censusChange1)
+
+
+reg4<-lm(HousePriceChange ~  FreignBornChange + PovertyChange + PopBlackChange + PopUnempChange 
+            , data=censusChange1)
+
+
+stargazer( reg1, reg2, reg3,reg4, 
+           title="Effect of Community Change on Housing Price Change",
+           type='html', align=TRUE )
+
+```
+
+
+
+***
+This tab shows regression analysis on change in housing price with different models.   
+**Model 1** uses all the available variables.    
+**Model 2** uses all the variables except for the collinear variables that were identified in the correlation plot.   
+**Model3** uses the variables related to ethinicity but not occupational variables.   
+**Model 4** uses limited number of variables and shows that PopunempChange and PovertyChange are highly correlated to HousePriceChange. The same variables are statistically significant in models 1,2 and 3 because of additional control variables.   
+Model 2 is a slightly better represention of the data than model 1 out of all 4 models.   
+Change in professional population is highly correlated to positive change in housing price whereas changes in poor english speaking population and hispanic population have negative correlation with change in housing price. 
+Using Model 2 we can now understand how housing price is affected by the explanatory variables, e.g. 1% change in professional population results in 2.77% positive change in housing price.    
+
+
+
+
+Clustering {.storyboard}
+=========================================
+
+
+
+### Identifying Communities by Cluster analysis for 2010 data. 
+
+```{r ,message=F, warning=F, echo=F, fig.align='center'}
+# library(mclust)
+Census2010<-census.dats
+keep.these1 <-c("Foreign.Born10","Recent.Immigrant10","Poor.English10","Veteran10","Poverty10","Poverty.Black10","Poverty.White10","Poverty.Hispanic10","Pop.Black10","Pop.Hispanic10","Pop.Unemp10","Pop.Manufact10","Pop.SelfEmp10","Pop.Prof10","Female.LaborForce10")
+
+mod2 <- Mclust(Census2010[keep.these1],G=4) 
+Census2010$cluster <- mod2$classification
+```
+
+
+```{r ,message=F, warning=F, echo=F, fig.align='center'}
+
+#Visualize Data
+stats1 <- 
+  Census2010 %>% 
+  group_by( cluster ) %>% 
+  select(keep.these1)%>% 
+  summarise_each( funs(mean) )
+
+t <- data.frame( t(stats1), stringsAsFactors=F )
+names(t) <- paste0( "GROUP.", 1:4 )
+t <- t[-1,]
+datatable(t) %>%
+  formatRound('GROUP.1', 3) %>%
+  formatRound('GROUP.2', 3) %>%
+  formatRound('GROUP.3', 3) %>%
+  formatRound('GROUP.4', 3)
+```
+
+
+***
+
+**Four different groups (clusters)** have been identified by using **cluster analysis** on the variables for the year 2010. 
+
+
+
+
+### Cluster 1
+
+```{r ,message=F, warning=F, echo=F, fig.align='center', fig.width=9}
+
+plot( rep(1,15), 1:15, bty="n", xlim=c(-.2,.7), 
+      type="n", xaxt="n", yaxt="n",
+      xlab="Score", ylab="",
+      main=paste("GROUP",1) )
+abline( v=seq(0,.7,.1), lty=3, lwd=1.5, col="gray90" )
+segments( y0=1:15, x0=0, x1=100, col="gray70", lwd=2 )
+text( 0, 1:15, keep.these1, cex=0.85, pos=2 )
+points( t[,1], 1:15, pch=19, col="Steelblue", cex=1.5 )
+axis( side=1, at=c(0,.1,.3,.2,.4,.5,.6,.7), col.axis="gray", col="gray" )
+
+```
+
+
+***
+
+**Poor, recently immigrated, mostly hispanics**
+
+Note: I am not considering Female population in naming of cluster because they are evenly distributed across all clusters.  
+
+
+
+### Cluster 2
+
+```{r ,message=F, warning=F, echo=F, fig.align='center', fig.width=9}
+
+plot( rep(1,15), 1:15, bty="n", xlim=c(-.2,.7), 
+      type="n", xaxt="n", yaxt="n",
+      xlab="Score", ylab="",
+      main=paste("GROUP",2) )
+abline( v=seq(0,.7,.1), lty=3, lwd=1.5, col="gray90" )
+segments( y0=1:15, x0=0, x1=100, col="gray70", lwd=2 )
+text( 0, 1:15, keep.these1, cex=0.85, pos=2 )
+points( t[,2], 1:15, pch=19, col="Steelblue", cex=1.5 )
+axis( side=1, at=c(0,.1,.3,.2,.4,.5,.6,.7), col.axis="gray", col="gray" )
+
+```
+
+
+***
+
+**Poor, multi-ethnic, professionals with some foreign born population**   
+
+Note: I am not considering Female population in naming of cluster because they are evenly distributed across all clusters.  
+
+### Cluster 3 
+
+```{r ,message=F, warning=F, echo=F, fig.align='center', fig.width=9}
+
+plot( rep(1,15), 1:15, bty="n", xlim=c(-.2,.7), 
+      type="n", xaxt="n", yaxt="n",
+      xlab="Score", ylab="",
+      main=paste("GROUP",3) )
+abline( v=seq(0,.7,.1), lty=3, lwd=1.5, col="gray90" )
+segments( y0=1:15, x0=0, x1=100, col="gray70", lwd=2 )
+text( 0, 1:15, keep.these1, cex=0.85, pos=2 )
+points( t[,3], 1:15, pch=19, col="Steelblue", cex=1.5 )
+axis( side=1, at=c(0,.1,.3,.2,.4,.5,.6,.7), col.axis="gray", col="gray" )
+
+```
+
+
+***
+
+**Upper-middle class, professionals with large numbers of foreign born population**   
+
+Note: I am not considering Female population in naming of cluster because they are evenly distributed across all clusters.  
+
+
+
+
+### Cluster 4 
+
+```{r ,message=F, warning=F, echo=F, fig.align='center', fig.width=9}
+
+plot( rep(1,15), 1:15, bty="n", xlim=c(-.2,.7), 
+      type="n", xaxt="n", yaxt="n",
+      xlab="Score", ylab="",
+      main=paste("GROUP",4) )
+abline( v=seq(0,.7,.1), lty=3, lwd=1.5, col="gray90" )
+segments( y0=1:15, x0=0, x1=100, col="gray70", lwd=2 )
+text( 0, 1:15, keep.these1, cex=0.85, pos=2 )
+points( t[,4], 1:15, pch=19, col="Steelblue", cex=1.5 )
+axis( side=1, at=c(0,.1,.3,.2,.4,.5,.6,.7), col.axis="gray", col="gray" )
+
+```
+
+
+***
+
+**Poor, Black Population**    
+
+Note: I am not considering Female population in naming of cluster because they are evenly distributed across all clusters.  
+
+
+
+
+Neighborhoods {.storyboard}
+=========================================
+
+
+### Dallas Dorling Cartogram 
+
+```{r, message=F, warning=F, echo=F}
+dallas.pop1 <-
+get_acs( geography = "tract", variables = "B01003_001",
+         state = "48", county = My.MSA.County, geometry = TRUE ) %>% 
+         select( GEOID, estimate ) 
+        #rename ( POP=estimate )
+msp <- merge( dallas.pop1, Census2010, by.x="GEOID" , by.y="TRTID10" )
+dallas.sp <- as_Spatial( msp )
+dallas.sp <- spTransform( dallas.sp, CRS("+init=epsg:3395"))
+POP<- (Census2010$Pop.Black10 + Census2010$Pop.Hispanic10 + Census2010$Pop.Manufact10 + Census2010$Pop.Prof10 + Census2010$Pop.SelfEmp10 + Census2010$Pop.Unemp10 + Census2010$Poor.English10)
+
+dallas.sp <- dallas.sp[ POP != 0 & (! is.na( POP )) , ]
+dallas.sp$pop.w <- POP /9000
+dallas_dorling <- cartogram_dorling( x=dallas.sp, weight="pop.w", k=0.05 )
+tm1 <- 
+  tm_shape( dallas_dorling ) + 
+  tm_polygons( col="cluster", palette="Accent"  )
+tm_shape( dallas_dorling ) +
+tm_polygons( col="Median.HH.Value10", n=10, style="quantile", palette="Spectral" ) +
+tm_layout( "Dallas Dorling Cartogram", title.position=c("right","bottom") )
+
+```
+
+
+
+
+
+
+```{r ,message=F, warning=F, echo=F, fig.align='center'}
+#Predicting cluster Grouping for 2000 census tracts
+
+# Get 2000 data
+Census2000 <-census.dats
+
+
+keep.these00 <-c("Foreign.Born00","Recent.Immigrant00","Poor.English00","Veteran00","Poverty00","Poverty.Black00","Poverty.White00","Poverty.Hispanic00","Pop.Black00","Pop.Hispanic00","Pop.Unemp00","Pop.Manufact00","Pop.SelfEmp00","Pop.Prof00","Female.LaborForce00")
+
+pred00<-predict(mod2, Census2000[keep.these00])
+
+Census2000$PredCluster <- pred00$classification
+
+TransDF2000<-Census2000 %>%
+  select(TRTID10, PredCluster)
+
+TransDF2010<-Census2010 %>%
+  select(TRTID10, cluster,Median.HH.Value10) 
+
+TransDFnew<-merge(TransDF2000,TransDF2010,by.all="TRTID10",all.x=TRUE)
+```
+
+
+***
+
+The **Cartogram** shows that higher median household value for 2010 is concentrated in north-western part of the city. The household value fans outward from this center with the areas of least household value located furthest away.
+
+
+
+
+
+
+### Creating Transition Matrix for clusters in Dallas Area
+
+```{r ,message=F, warning=F, echo=F, fig.align='center'}
+
+#Transition Matrix
+prop.table( table( TransDFnew$PredCluster, TransDFnew$cluster ) , margin=1 )
+    
+```
+
+
+***
+**Cluster 1**: 85.13% of counties classified as cluster 1 were classified as cluster 1 in 2010 as well. 1.35% of moved into cluster 2, 9.45% moved into Cluster 3 and 0.40% moved into cluster 4.   
+**Cluster 2**: 51.84% of counties classified as cluster 2 were classified as cluster 2 in 2010 as well. 8.29% of moved into cluster 1, 39.40% moved into Cluster 3 and 0.04% moved into cluster 4.   
+**Cluster 3**: 50.65% of counties classified as cluster 3 were classified as cluster 3 in 2010 as well. 34.49% of moved into cluster 1, 7.86% moved into Cluster 2 and 6.98% moved into cluster 4.   
+**Cluster 4**: 90.41% of counties classified as cluster 4 were classified as cluster 4 in 2010 as well. 8.21% of moved into cluster 1, 0% moved into Cluster 2 and 1.36% moved into cluster 3.
+
+This shows that population from cluster 4 had very little movement from 2000 to 2010. There is an influx of population in cluster 3 from cluster 2 and about 35% of population from cluster 3 moved to cluster 1. This indicates **gentrifiaction** of cluster 3 over the time period 2000-2010, which can be further attested by qualities of cluster 3 in 2010.   
+
+**Identified cluster for 2010**   
+Cluster 1- Poor, recently immigrated, mostly hispanics.   
+Cluster 2- Poor, multi-ethnic, professionals with some foreign born population.   
+Cluster 3- Upper-middle class, professionals with large numbers of foreign born population.   
+Cluster 4- Poor, Black Population.  
+
+### Neighborhood Transitions- Sankey Plot
+
+```{r, message=F, warning=F, echo=F, fig.align='center'}
+
+# Sankey Transition Plot
+trn_mtrx1 <-
+  with(TransDFnew,
+       table(PredCluster, 
+             cluster))
+
+library(Gmisc)
+transitionPlot(trn_mtrx1, 
+               type_of_arrow = "gradient")
+```
+
+
+***
+**Identified cluster for 2010**   
+Cluster 1- Poor, recently immigrated, mostly hispanics.   
+Cluster 2- Poor, multi-ethnic, professionals with some foreign born population.   
+Cluster 3- Upper-middle class, professionals with large numbers of foreign born population.   
+Cluster 4- Poor, Black Population.   
+
+
+
+**Sankey plot** shows the flow of population among different clusters because of housing price changes and gentrification.   
+
+Cluster 1 shows inflow of the population from cluster 3 because of gentrification in cluster 3. People who cannot afford cluster 3 anymore chose to move to cluster 1. 
+
+Cluster 2 shows outflow of the population to cluster 3 because of gentrification in cluster 3. 
+
+Cluster 3 has seen influx of population from cluster 2. **Cluster 3 is gentrifying** with influx of multiethnic and professional population from cluster 2.   
+
+Cluster 4 mainly stayed the same. 
+
+
+
+About {.storyboard}
+=========================================
+
+
+
+
+
+### About the Developer 
+
+Sunayna Goel, also known as *Nina*, is a student of Program Evaluation and Data Analytics, M.S. at ASU. She is working towards enhancing her career. This dashboard is a part of final assignment for the course Data Analytics Practicum (CPP 529).  
+
+
+After finishing her M.S. in Accounting and Business Administration she worked in Treasury Market for the largest public sector bank of India, started two of her own companies, and eventually pursued her love for teaching high school mathematics and art. She has extensive knowledge and understanding of financial and education sectors.   
+
+
+You can find Nina in making artwork or taking photographs in her free time. She is involved in various charities and loves to devote her time for the causes she believes in. 
+
+
+She can be reached at **sunayna.goel@asu.edu**
+
+
+
+### Documentation {data-commentary-width=400}
+
+```{r, eval=F, echo=T}
+# R libraries used for this project
+library( tidycensus )
+library( tidyverse )
+library( ggplot2 )
+library( plyr )
+library( stargazer )
+library( corrplot )
+library( purrr )
+library( flexdashboard )
+library( leaflet )
+library( mclust )
+library( pander )
+library( DT )
+library(sp)
+library(sf)
+library( cartogram )  
+library( maptools ) 
+library(tmap)
+library(tmaptools)
+library(Gmisc)
+```
+
+
+***
+
+The package **tidycensus** is used to load US Census Boundary and Attribute Data as 'tidyverse' and 'sf'-Ready Data Frames.   
+The package **tidyverse** is a coherent system of packages for data manipulation, exploration and visualization that share a common design philosophy.    
+The package **ggplot2** maps the data to the aesthetics and graphical primitives of user choice.   
+The package **plyr** is a set of tools that solves a common set of problems. It helps to break a big problem down into manageable pieces, operate on each piece and then put all the pieces back together.   
+The package **stargazer** creates LATEX code, HTML code and ASCII text for well-formatted regression tables, with multiple models side-by-side, as well as for summary statistics tables, data frames, vectors and matrices.   
+The package **corrplot** helps with graphical display of a correlation matrix, confidence interval.   
+The package **purr** enhances R’s functional programming (FP) toolkit by providing a complete and consistent set of tools for working with functions and vectors.   
+The package **flexdashboard** helps create easy interactive dashboards.   
+The package **leaflet** help create interactive map using Leaflet javascript.   
+The package **mclust** helps with Gaussian finite mixture models for model-based clustering, classification, and density estimation.   
+The package **pander** provides a minimal and easy tool for rendering R objects into Pandoc's markdown.   
+The package **DT** provides an R interface to the JavaScript library DataTables.   
+The package **sp** is an utility function which provides for plotting data as maps, spatial selection, as well as methods for retrieving coordinates, for subsetting, print, summary, etc.   
+The package **sf** supports for simple features, a standardized way to encode spatial vector data.   
+The package **cartogram** constructs continuous and non-contiguous area cartograms.    
+The package **maptools** contain set of tools for manipulating geographic data.    
+The package **tmap** helps create thematic maps with greater flexibitlity.   
+The package **tmaptools** aims to supply the workflow to create thematic maps.    
+The Package **Gmisc** is used to display descriptive statistics, transition Plots, and more.
+
+
+For working with census data first a **census API key** needs to be procured.    
+Second, your Census API key is added to Sys.setenv(CENSUS_KEY="YOURKEYHERE"). Then **library (censusapi)** is called to access any census data. 
+
+
+
+
+
+
+
+
+

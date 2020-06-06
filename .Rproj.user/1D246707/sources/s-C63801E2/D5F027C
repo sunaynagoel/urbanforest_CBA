@@ -1,0 +1,26 @@
+{
+    "collab_server" : "",
+    "contents" : "",
+    "created" : 1591459279155.000,
+    "dirty" : false,
+    "encoding" : "UTF-8",
+    "folds" : "",
+    "hash" : "368260660",
+    "id" : "D5F027C",
+    "lastKnownWriteTime" : 1591460881,
+    "last_content_update" : 1591460881164,
+    "path" : "~/Documents/GitHub/capstone project/urbanforest_CBA/story board/storyboard_goel.Rmd",
+    "project_path" : "story board/storyboard_goel.Rmd",
+    "properties" : {
+        "cursorPosition" : "11,2",
+        "scrollLine" : "8",
+        "tempName" : "Untitled1"
+    },
+    "read_only" : false,
+    "read_only_alternatives" : [
+    ],
+    "relative_order" : 2,
+    "source_on_save" : false,
+    "source_window" : "",
+    "type" : "r_markdown"
+}
