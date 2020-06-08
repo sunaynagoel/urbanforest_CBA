@@ -1,0 +1,7 @@
+"0","## insert widget for user input"
+"0",""
+"0","radioButtons(""radio.flight"", label = h4(""Select an appropriate round trip flight""),"
+"0","    choices = c(""Cross Counrty Flight (Approximately Six Hours Flight)"","
+"0","                ""Same Sector Flight (Approximately Three Hours Flight)"","
+"0","                ""Same Sector shorter Flight (Approximately Two hours Flight)""), "
+"0","    selected = c(""Cross Counrty Flight (Approximately Six Hours Flight)""))"
