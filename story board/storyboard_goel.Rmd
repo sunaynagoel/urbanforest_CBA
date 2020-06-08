@@ -22,6 +22,13 @@ library(here)
 library(dplyr)
 ```
 
+
+```{r, message=FALSE, warning=FALSE, include=FALSE, echo=FALSE}
+# load data 
+dat <- read.csv(here("data/trees-cost-benefit.csv"))
+
+```
+
 <style type="text/css"> .sidebar { overflow: auto; } </style>
 
 Introduction {.storyboard}
@@ -44,7 +51,7 @@ Select Carbon Generation to offset {data-orientation=rows}
 =========================================
 
 
-### Estimate the carbon generation and tree need to offset it
+### Estimate the carbon generation and trees needed to offset it
 
 Sidebar {.sidebar}
 -------------------------------------
@@ -52,10 +59,11 @@ Sidebar {.sidebar}
 ## insert widget for user input
 
 radioButtons("radio.flight", label = h4("Select an appropriate round trip flight"),
-    choices = c("Cross Counrty Flight (Approximately Six Hours Flight)",
-                "Same Sector Flight (Approximately Three Hours Flight)",
-                "Same Sector shorter Flight (Approximately Two hours Flight)"), 
-    selected = c("Cross Counrty Flight (Approximately Six Hours Flight)"))
+    choices = list("Cross Counrty Flight (Approximately Six Hours Flight)" = "3700",
+                "Same Sector Flight (Approximately Three Hours Flight)" = "1210",
+                "Same Sector shorter Flight (Approximately Two hours Flight)" = "950"), 
+    selected = c("3700")
+             )
 
 
 #fluidPage(
@@ -72,12 +80,12 @@ radioButtons("radio.flight", label = h4("Select an appropriate round trip flight
 ## insert widget for tree selection by the user from the list provided
 fluidPage(
   radioButtons("radio.tree", label = h3("Select the type of tree to offset carbon generated"),
-    choices = list("Mesquite" = 1, 
-                   "Blue Palo Verde " = 2, 
-                   "Aleppo Pine" = 3,
-                   "Chinese Elm" = 4, 
-                   "Plao Brea" = 5), 
-    selected = 1),
+    choices = list("Mesquite" = "mesquite", 
+                   "Blue Palo Verde " = "blue palo verde", 
+                   "Aleppo Pine" = "aleppo pine",
+                   "Chinese Elm" = "chinese elm", 
+                   "Plao Brea" = "palo brea"), 
+    selected = c("mesquite")),
   
  # hr(),
  # fluidRow(column(3, verbatimTextOutput("value")))
@@ -91,15 +99,8 @@ Outputs
 ### Number of trees needed to offset the carbon
 
 ```{r}
-
-shinyServer (function(input, output) {
-
-
-# The current application doesnt need reactive
-
-  output$radio.flight <- input$radioflight
-})
-
+# tree.var<- dat %>% 
+ # filter (species %in% input$radio.tree)
 
 ```
 
