@@ -5,13 +5,15 @@
     "dirty" : false,
     "encoding" : "UTF-8",
     "folds" : "",
-    "hash" : "2896266965",
+    "hash" : "0",
     "id" : "A6437184",
     "lastKnownWriteTime" : 1591668167,
     "last_content_update" : 1591668167,
     "path" : "~/Desktop/storyboard_goel.Rmd",
     "project_path" : null,
     "properties" : {
+        "cursorPosition" : "116,3",
+        "scrollLine" : "101"
     },
     "read_only" : false,
     "read_only_alternatives" : [
