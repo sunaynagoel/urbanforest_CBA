@@ -1,3 +1,0 @@
-"0","leaflet() %>%"
-"0","  addTiles(options = providerTileOptions(minZoom = 8, maxZoom = 10)) %>%"
-"0","  addMarkers(lng=-112.0740, lat=33.4484, popup=""City Center Phoenix, AZ"")"
