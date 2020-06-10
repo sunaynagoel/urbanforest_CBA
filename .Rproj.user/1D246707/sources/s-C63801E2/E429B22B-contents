@@ -164,7 +164,7 @@ For *medium tree (8ft-10ft)* is **$255/tree**
 For *small tree (4ft-6ft)* is **$105/tree**
 
 
-### Cost of planting and maintaining trees {data-commentary-width=600}
+### Cost of planting and maintaining trees {data-commentary-width=500}
 
 ```{r}
 # Correct Installtion 
@@ -183,52 +183,21 @@ For *small tree (4ft-6ft)* is **$105/tree**
 ```
 
 *** 
-Cost of maintaining urban trees can viewed under these major categories:    
+Explaination of cost
 
-•	**Irrigation Cost** – Due to arid climate of the southwest region newly planted trees need irrigation for three to five years. The survival rate can decrease dramatically without irrigation lines. Once planted, trees typically require about 1,000 gal (3.8 m3) per year during the establishment period and 4,000 gal (15.1 m3) per year as they mature (McPherson, et al., 2004). With a water price of approximately $3.40/1000 gallons in Phoenix average annual irrigation water costs are around than $8.0/tree/year (Kuhney, 2014).   
-
-•	**Pruning and maintenance**- In the Desert Southwest region Pruning expenditure is single greatest cost in public trees. Pruning costs are higher at $12-$14/tree/year in Phoenix because of the long growing seasons and frequent irrigation (McPherson, et al., 2004, pg. 20).     
-
-•	**Tree Removal and disposal**- More often than not trees need to be removed and disposed for various reasons. Trees are removed because sometimes they don’t survive, to resolve conflicts or because of weather related damages.For phoenix region average mortality rate is 2.5% for the first five years and 0.8% thereafter. Based on the mortality rate the cost of removing trees can be estimated at $2.50/tree/year (McPherson, et al., 2004, pg. 19). In case of correct installation chances of tree removal is negligible and set to zero.     
-
-•	**Administration and cleaning costs**- Administration and inspection costs were the next largest expenditure, ranging from approximately 8–35% of annual expenditures which is about $2–$5/tree/year ("Using Trees and Vegetation to Reduce Heat Islands", 2019). This also includes cost of sweeping streets. Street trees drop leaves, flowers, fruit, and branches year-round that constitute a significant portion of debris collected from city streets. Costs include additional labor needed to maintain irrigation line, remove leaves, and property damage caused by localized flooding.    
-
-•	**Pest control and Fertilization cost** - The tree species found commonly in South-West Desert area have very low susceptibility to common pests found nationwide. The i-Tree Eco model provides valuable data about what pests may become a concern. The pests most likely to influence the urban forest in the project area are Gypsy Moth and Asian Long horned Beetle ("Community Forest Assessment", 2014). The Desert Southwest region are spending approximately $ 0.01/ tree/ year on pest control and fertilization (McPherson, et al., 2004, pg. 21).    
-
-•	**Liability and Legal cost**- The Desert Southwest region Spends relatively less to manage conflicts between trees and power lines, sidewalks, sewers, and other elements of the urban infrastructure. Many street trees are planted in wide areas along boulevards where they do not conflict with sidewalks or power lines. Also, tree populations in Desert Southwest cities contain small-stature trees than in other regions of the country. The region typically spends about $ 0.01/ tree/ year because fewer conflicts and type of trees (McPherson, et al., 2004, pg. 21).  
-
-
-### Benefits from the tree {data-commentary-width=600}
+### Benefits from the tree
 
 ```{r}
 # make a graph showing benefit of correct planting the chosen tree /year for 30 years (1 tree)
 
 # make a graph showing benefit of convenient planting the chosen tree /year for 30 years (1 tree)
 
+
 ```
 
 *** 
 
-**Benefits from the trees:** 
-Trees are a valuable asset. Benefit of tree planting or increasing urban canopy cover can be broadly given classified into six categories.    
-•	**Reduction in stormwater runoff** - Trees act as mini-reservoirs, controlling runoff at the source. Trees reduce runoff by intercepting and holding rain on leaves, branches and bark, increasing infiltration and storage of rainwater through the tree's root system and reducing soil erosion by slowing rainfall before it strikes the soil.    
-
-•	**Increase in property value** - Trees are known to increase property. Real estate agents have long known that trees can increase the "curb appeal" of properties thereby increasing sale prices. The value depends on type of trees, some add more, and some add less to the property value.    
-
-•	**Reduction in annual cooling cost for household**- Strategically placed trees can increase home energy efficiency. In summer, trees shading east, and west walls keep buildings cooler. In winter, allowing the sun to strike the southern side of a building can warm interior spaces. Trees modify climate and conserve building energy use by (a) shading reduces the amount of heat absorbed and stored by buildings. (b) evaporation cools down the atmospheric temperature. (c)Tree canopies slow down winds thereby reducing the amount of heat or cooling lost from a home, especially where conductivity is high (e.g., glass windows).     
-
-•	**Air quality and Natural Gas improvement**- Air pollution in urban areas poses serious health threat that causes asthma, coughing, headaches, respiratory and heart disease, and cancer. Urban forest can reduce the health effects of pollution by absorbing pollutants like CO2, NO2 and Sulphur dioxide, releasing oxygen, reducing production of ozone, intercepting particulate matter (dust, smoke, and ash), and finally by reducing energy usage thereby reducing emission from power plants. However, trees themselves emit biogenic volatile organic compounds (BVOCs) which can contribute to ground-level ozone production. This can be calculated based on type of tree and reduced from overall benefit to arrive at net benefit.     
-
-•	**Reduction in atmospheric CO2**- Trees reduce atmospheric carbon by sequestering (locking up) CO2 in their roots, trunks, stems and leaves while they grow, and in wood products after they are harvested. They also reduce atmospheric CO2 by reducing heating and cooling demand which in turn reduces emission associated with power generation. This number is very significant to understand individual “footprint”. For e.g.; A flight from New York to Los Angeles adds 1,400 pounds of CO2 per passenger.     
-
-There are **aesthetic and other benefits** associated with planting trees as well.  Such as; 
-•	Social and Psychological benefits    
-•	Human health benefits   
-•	Noise reduction    
-•	Increase in Urban Wildlife   
-•	Environment related jobs and education
-
-For the purpose of this paper benefits related to the air-quality and hydrology are considered. 
+Details of benefit 
 
 
 
