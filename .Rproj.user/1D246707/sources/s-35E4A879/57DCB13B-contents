@@ -18,6 +18,7 @@ output:
 #install.packages("here")
 #install.packages("dplyr")
 #install.packages ("kableExtra")
+#install.packages ("FinancialMath")
 
 library(shiny)
 library(flexdashboard)
@@ -25,6 +26,7 @@ library(leaflet)
 library(here)
 library(dplyr)
 library(kableExtra)
+library(FinancialMath)
 ```
 
 
@@ -307,9 +309,61 @@ Please note that the benefit are reset at year 15 or 16 under this method becaus
 
 ```{r}
 # NPV from the tree installtion and explaination in case of correct and convenient installtion
+#NPV(cf0,cf,times,i,plot=FALSE)
+
+cost.correct.y0 <-  correct.dat %>% 
+  filter (year == 0) %>% 
+  select (cost_total)
 
 
+cashflow.correct.yearly <- correct.dat %>% 
+  filter (year == 1 |  year == 2 | year == 3 | year == 4 | year == 5 | year == 6 |year == 7 | year == 8 | year == 9 | 
+             year == 10 | year == 11| year == 12| year == 13 | year == 14 | year == 15 | year == 16 | year == 17 | year == 18 |
+             year == 19| year == 20| year == 21| year == 22| year == 23 | year == 24 | year == 25 | year == 26 | year == 27 |
+             year == 28 | year == 29 | year == 30 ) %>% 
+          select(ben_total)
 
+times.correct <- 1:30
+
+interest.npv <- as.numeric(.03)
+
+npv.correct <- NPV (as.numeric(cost.correct.y0), as.numeric(is.numeric(cashflow.correct.yearly)), as.numeric(is.numeric(times.correct)), interest.npv, plot=FALSE )
+
+npv.table.correct <- data.frame ( "Details" = c("Net Present Value of benefits over 30 years period from Planting tree CORRECTLY"),
+                            "Value" = npv.correct)
+kable (npv.table.correct) %>% 
+kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive"), full_width = F, position = "left")
+  
+```
+
+```{r}
+# NPV from the tree installtion and explaination in case of correct and convenient installtion
+#NPV(cf0,cf,times,i,plot=FALSE)
+
+cost.convenient.y0 <-  convenient.dat %>% 
+  filter (year == 0) %>% 
+  select (cost_total)
+
+
+cashflow.convenient.yearly <- convenient.dat %>% 
+  filter (year == 1 |  year == 2 | year == 3 | year == 4 | year == 5 | year == 6 |year == 7 | year == 8 | year == 9 | 
+             year == 10 | year == 11| year == 12| year == 13 | year == 14 | year == 15 | year == 16 | year == 17 | year == 18 |
+             year == 19| year == 20| year == 21| year == 22| year == 23 | year == 24 | year == 25 | year == 26 | year == 27 |
+             year == 28 | year == 29 | year == 30 ) %>% 
+          select(ben_total)
+
+times.convenient <- 1:30
+
+interest.npv <- as.numeric(.03)
+
+npv.convenient <- NPV (as.numeric(cost.convenient.y0), as.numeric(is.numeric(cashflow.convenient.yearly)), as.numeric(is.numeric(times.convenient)), interest.npv, plot=FALSE )
+
+
+npv.table.convenient <- data.frame ( "Details" = c("Net Present Value of benefits over 30 years period from Planting tree           CONVENIENTLY"),
+                            "Value" = npv.convenient)
+kable (npv.table.convenient) %>% 
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive"), full_width = F, position = "left")
+  
 ```
 
 ***
