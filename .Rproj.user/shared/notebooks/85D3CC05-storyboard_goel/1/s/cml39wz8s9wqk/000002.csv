@@ -7,6 +7,7 @@
 "0","#install.packages(""here"")"
 "0","#install.packages(""dplyr"")"
 "0","#install.packages (""kableExtra"")"
+"0","#install.packages (""FinancialMath"")"
 "0",""
 "0","library(shiny)"
 "0","library(flexdashboard)"
@@ -14,3 +15,4 @@
 "0","library(here)"
 "0","library(dplyr)"
 "0","library(kableExtra)"
+"0","library(FinancialMath)"

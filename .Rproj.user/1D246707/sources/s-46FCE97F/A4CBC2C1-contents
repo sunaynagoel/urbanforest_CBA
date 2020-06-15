@@ -8,7 +8,7 @@ output:
     runtime: shiny
 ---
 
-```{r, message=FALSE }
+```{r, message=FALSE, warning=FALSE }
 #message=FALSE, warning=FALSE, include=FALSE, echo=FALSE
 # install packages and library
 
@@ -120,9 +120,16 @@ carbon_convenient <- sum(convenient.dat$co2reduction_lb)
 # number of trees needed to offset carbon 
 n_tree_convenient <- round ( as.numeric(input$lbs_carbon)/carbon_convenient)
 
+if (n_tree_convenient <= 0)
+{
+  n_tree_convenient <- 1
+}
+
 tree_convenient_cost <- round(as.numeric (n_tree_convenient*510))
 #n_tree_convenient
 # filter type correct 
+
+
 
 correct.dat <- input.dat %>% 
 filter (correct_vs_convenient == "correct") 
@@ -133,6 +140,11 @@ carbon_correct <- sum(correct.dat$co2reduction_lb)
 #carbon_correct
 # can't get input$lbs_carbon to work 
 n_tree_correct <- round (as.numeric(input$lbs_carbon)/carbon_correct)
+
+if (n_tree_correct <= 0)
+{
+  n_tree_correct <- 1
+}
 
 tree_correct_cost <- round (as.numeric(n_tree_correct*14000))
 #n_tree_correct
