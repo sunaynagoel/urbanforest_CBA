@@ -99,7 +99,7 @@ selectInput("species_trees", label = "Type of the tree to be planted:",
 Column 
 ----------------------------------
 
-### Amount of carbon reduced per tree and number of trees needed to offset it
+### Amount of carbon reduced per tree in thirty year period and number of trees needed to offset it
 
 
 ```{r}
@@ -109,27 +109,32 @@ Column
 renderTable ({
 input.dat <- dat %>% 
   filter (species %in% input$species_trees)
+
 # filter type convenient 
 convenient.dat <-input.dat %>% 
   filter (correct_vs_convenient == "convenient") 
-# calculate the carbon reduced by one tree by convenient installation 
 
+# calculate the carbon reduced by one tree by convenient installation 
 carbon_convenient <- sum(convenient.dat$co2reduction_lb)
 #carbon_convenient
 # number of trees needed to offset carbon 
 n_tree_convenient <- round ( as.numeric(input$lbs_carbon)/carbon_convenient)
 #n_tree_convenient
 # filter type correct 
+
 correct.dat <- input.dat %>% 
 filter (correct_vs_convenient == "correct") 
+
 # calculate the carbon reduced by one tree by convenient installation 
 carbon_correct <- sum(correct.dat$co2reduction_lb)
+
 #carbon_correct
 # can't get input$lbs_carbon to work 
 n_tree_correct <- round (as.numeric(input$lbs_carbon)/carbon_correct)
+
 #n_tree_correct
 table.output <- matrix(c(carbon_convenient, n_tree_convenient, carbon_correct, n_tree_correct ), ncol=2,byrow=TRUE)
-colnames(table.output) <- c("Carbon_reduced_LBS)","Number_of_trees_needed")
+colnames(table.output) <- c("Carbon_reduced_LBS","Number_of_trees_needed")
 rownames(table.output) <- c("Convenient Planting","Correct Planting")
 table.output <- data.frame(table.output)
 table.output
@@ -137,38 +142,7 @@ table.output
 # give some details about the tree or link to a webpage connecting to that tree details
 ```
 
-```{r, include=FALSE}
-#colnames(dat)
 
-# use the user input of trees to filter data
-# cant get input$species_trees to work. trying codes with mesquite
-input.dat <- dat  %>% 
-  filter (species %in% "mesquite")
-
-# filter type convenient 
-convenient.dat <-input.dat %>% 
-  filter (correct_vs_convenient == "convenient") 
-# calculate the carbon reduced by one tree by convenient installation 
-carbon_convenient <- sum(convenient.dat$co2reduction_lb)
-carbon_convenient
-# number of trees needed to offset carbon 
-# can't get input$lbs_carbon to work 
-n_tree_convenient <- round ( 3700/carbon_convenient)
-n_tree_convenient
-
-# filter type correct 
-correct.dat <- input.dat %>% 
-  filter (correct_vs_convenient == "correct") 
-# calculate the carbon reduced by one tree by convenient installation 
-carbon_correct <- sum(correct.dat$co2reduction_lb)
-carbon_correct
-# can't get input$lbs_carbon to work 
-n_tree_correct <- round ( 3700/carbon_correct)
-n_tree_correct
-
-# give some details about the tree or link to a webpage connecting to that tree details
-
-```
 *** 
 Some detail about the tree or an external link to another website with tree characteristic 
 
@@ -264,16 +238,33 @@ For the purpose of this paper benefits related to the air-quality and hydrology 
 ```{r}
 # make a graph showing benefit of correct planting the chosen tree /year for 30 years (1 tree)
 
-table.benefit.correct <- correct.dat %>% 
-  select( Year= year,
-          StormWater_Runoff  = ben_storm_water,
-          PropertyValue = ben_property_value, 
-          Electricity =  ben_electricity, 
-          AirQuality = ben_air_quality, 
-          NaturalGas = ben_naturalgas, 
-          CarbonReduction = ben_co2_reduction) 
-kable(table.benefit.correct) %>%
-  kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive"), full_width = F, position = "left")
+renderPlot ({
+  input.dat <- dat %>% 
+  filter (species %in% input$species_trees)
+
+# filter type correct 
+correct.dat <-input.dat %>% 
+  filter (correct_vs_convenient == "correct") 
+  
+ StormWater_Runoff <-  round(sum (correct.dat$ben_storm_water))
+ PropertyValue <-  round(sum(correct.dat$ben_property_value))
+ Electricity <- round(sum(correct.dat$ben_electricity))
+ AirQuality <- round(sum(correct.dat$ben_air_quality))
+ NaturalGas <- round(sum(correct.dat$ben_naturalgas))
+ CarbonReduction <- round(sum(correct.dat$ben_co2_reduction))
+ 
+ table.benefit.correct <- c(StormWater_Runoff, PropertyValue, Electricity, AirQuality, NaturalGas, CarbonReduction)
+ 
+ bp.correct <- barplot(table.benefit.correct, 
+         main = "Benefits from planting tree correctly",
+         xlab = "Benefits in dollars",
+         ylab = "Amount in dollars",
+         ylim = c(0,600),
+         names.arg = c("StormWater_Runoff", "PropertyValue", "Electricity", "AirQuality", "NaturalGas", "CarbonReduction"),
+         col = "steelblue")
+ text(bp.correct, 100, round(table.benefit.correct, 1),cex=1,pos=3) 
+ 
+})
   
 
 
@@ -286,16 +277,33 @@ These benefits are derived from planting one selected species correctly for a 30
 
 ```{r}
 # make a graph showing benefit of convenient planting the chosen tree /year for 30 years (1 tree)
-table.benefit.convenient <- convenient.dat %>% 
-  select( Year = year,
-          StormWater_Runoff = ben_storm_water,
-          PropertyValue = ben_property_value, 
-          Electricity =  ben_electricity, 
-          AirQuality = ben_air_quality, 
-          NaturalGas = ben_naturalgas, 
-          CarbonReduction = ben_co2_reduction) 
-kable(table.benefit.convenient) %>%
-  kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive"), full_width = F, position = "left")
+renderPlot ({
+  
+  input.dat <- dat %>% 
+  filter (species %in% input$species_trees)
+
+# filter type convenient 
+convenient.dat <-input.dat %>% 
+  filter (correct_vs_convenient == "convenient") 
+
+ StormWater_Runoff <-  round(sum (convenient.dat$ben_storm_water))
+ PropertyValue <-  round(sum(convenient.dat$ben_property_value))
+ Electricity <- round(sum(convenient.dat$ben_electricity))
+ AirQuality <- round(sum(convenient.dat$ben_air_quality))
+ NaturalGas <- round(sum(convenient.dat$ben_naturalgas))
+ CarbonReduction <- round(sum(convenient.dat$ben_co2_reduction))
+ 
+ table.benefit.convenient <- c(StormWater_Runoff, PropertyValue, Electricity, AirQuality, NaturalGas, CarbonReduction)
+ 
+ bp.convenient <- barplot(table.benefit.convenient, 
+         main = "Benefits from planting tree conveniently",
+         xlab = "Benefits in dollars",
+         ylab = "Amount in dollars",
+         ylim = c(0,600), 
+         names.arg = c("StormWater_Runoff", "PropertyValue", "Electricity", "AirQuality", "NaturalGas", "CarbonReduction"),
+         col = "steelblue")
+ text(bp.convenient, 100, round(table.benefit.convenient, 1),cex=1,pos=3) 
+})
 ```
 
 *** 
@@ -311,6 +319,15 @@ Please note that the benefit are reset at year 15 or 16 under this method becaus
 # NPV from the tree installtion and explaination in case of correct and convenient installtion
 #NPV(cf0,cf,times,i,plot=FALSE)
 
+renderTable({
+  
+ input.dat <- dat %>% 
+  filter (species %in% input$species_trees)
+
+# filter type correct 
+correct.dat <-input.dat %>% 
+  filter (correct_vs_convenient == "correct") 
+   
 cost.correct.y0 <-  correct.dat %>% 
   filter (year == 0) %>% 
   select (cost_total)
@@ -323,24 +340,24 @@ cashflow.correct.yearly <- correct.dat %>%
              year == 28 | year == 29 | year == 30 ) %>% 
           select(ben_total)
 
-times.correct <- 1:30
+cashflow.correct.yearly <- as.numeric(unlist(cashflow.correct.yearly[[1]])) 
+
+times.correct <- as.numeric(1:30)
 
 interest.npv <- as.numeric(.03)
 
-npv.correct <- NPV (as.numeric(cost.correct.y0), as.numeric(is.numeric(cashflow.correct.yearly)), as.numeric(is.numeric(times.correct)), interest.npv, plot=FALSE )
+npv.correct <- NPV (as.numeric(cost.correct.y0), cashflow.correct.yearly, times.correct, interest.npv, plot=FALSE )
 
 npv.table.correct <- data.frame ( "Details" = c("Net Present Value of benefits over 30 years period from Planting tree CORRECTLY"),
                             "Value" = npv.correct)
-kable (npv.table.correct) %>% 
-kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive"), full_width = F, position = "left")
-  
-```
+npv.table.correct
 
-```{r}
-# NPV from the tree installtion and explaination in case of correct and convenient installtion
-#NPV(cf0,cf,times,i,plot=FALSE)
 
-cost.convenient.y0 <-  convenient.dat %>% 
+# filter type convenient 
+convenient.dat <-input.dat %>% 
+  filter (correct_vs_convenient == "convenient") 
+
+  cost.convenient.y0 <-  convenient.dat %>% 
   filter (year == 0) %>% 
   select (cost_total)
 
@@ -352,17 +369,27 @@ cashflow.convenient.yearly <- convenient.dat %>%
              year == 28 | year == 29 | year == 30 ) %>% 
           select(ben_total)
 
-times.convenient <- 1:30
+cashflow.convenient.yearly <- as.numeric(unlist(cashflow.convenient.yearly[[1]])) 
+
+times.convenient <- as.numeric(1:30)
 
 interest.npv <- as.numeric(.03)
 
-npv.convenient <- NPV (as.numeric(cost.convenient.y0), as.numeric(is.numeric(cashflow.convenient.yearly)), as.numeric(is.numeric(times.convenient)), interest.npv, plot=FALSE )
+npv.convenient <- NPV (as.numeric(cost.convenient.y0), cashflow.convenient.yearly, times.convenient, interest.npv, plot=FALSE )
 
 
 npv.table.convenient <- data.frame ( "Details" = c("Net Present Value of benefits over 30 years period from Planting tree           CONVENIENTLY"),
                             "Value" = npv.convenient)
-kable (npv.table.convenient) %>% 
-  kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive"), full_width = F, position = "left")
+
+#kable (npv.table.convenient) %>% 
+#  kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive"), full_width = F, position = "left")
+
+npv.table.output <- matrix(c(npv.convenient, npv.correct ), ncol=1,byrow=TRUE)
+colnames(npv.table.output) <- c("NPV")
+rownames(npv.table.output) <- c("Convenient Planting","Correct Planting")
+npv.table.output <- data.frame(npv.table.output)
+npv.table.output
+})
   
 ```
 
