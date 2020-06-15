@@ -154,6 +154,8 @@ rownames(table.output) <- c("Convenient Planting","Correct Planting")
 table.output <- data.frame(table.output)
 table.output
 } )
+
+
 # give some details about the tree or link to a webpage connecting to that tree details
 ```
 
