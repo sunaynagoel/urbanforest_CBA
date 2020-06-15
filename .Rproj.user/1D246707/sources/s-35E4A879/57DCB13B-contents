@@ -119,6 +119,8 @@ carbon_convenient <- sum(convenient.dat$co2reduction_lb)
 #carbon_convenient
 # number of trees needed to offset carbon 
 n_tree_convenient <- round ( as.numeric(input$lbs_carbon)/carbon_convenient)
+
+tree_convenient_cost <- round(as.numeric (n_tree_convenient*510))
 #n_tree_convenient
 # filter type correct 
 
@@ -132,9 +134,10 @@ carbon_correct <- sum(correct.dat$co2reduction_lb)
 # can't get input$lbs_carbon to work 
 n_tree_correct <- round (as.numeric(input$lbs_carbon)/carbon_correct)
 
+tree_correct_cost <- round (as.numeric(n_tree_correct*14000))
 #n_tree_correct
-table.output <- matrix(c(carbon_convenient, n_tree_convenient, carbon_correct, n_tree_correct ), ncol=2,byrow=TRUE)
-colnames(table.output) <- c("Carbon_reduced_LBS","Number_of_trees_needed")
+table.output <- matrix(c(carbon_convenient, n_tree_convenient, tree_convenient_cost, carbon_correct, n_tree_correct,   tree_correct_cost ), ncol=3,byrow=TRUE)
+colnames(table.output) <- c("Carbon_reduced_LBS","Number_of_trees_needed", "Total Offset Cost")
 rownames(table.output) <- c("Convenient Planting","Correct Planting")
 table.output <- data.frame(table.output)
 table.output
