@@ -1,0 +1,6 @@
+"0","# Correct Installtion "
+"0","# make a table showing cost in half of story board"
+"0",""
+"0",""
+"0","  kable(dat.cost.correct) %>%"
+"0","  kable_styling(bootstrap_options = c(""striped"", ""hover"", ""condensed"", ""responsive""), full_width = F, position = ""left"")"
