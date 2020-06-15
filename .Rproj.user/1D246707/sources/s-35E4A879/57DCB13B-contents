@@ -269,8 +269,6 @@ correct.dat <-input.dat %>%
  
 })
   
-
-
 ```
 
 *** 
@@ -279,6 +277,8 @@ These benefits are derived from planting one selected species correctly for a 30
 ### Benefits from the tree planted conveniently 
 
 ```{r}
+
+
 # make a graph showing benefit of convenient planting the chosen tree /year for 30 years (1 tree)
 renderPlot ({
   
