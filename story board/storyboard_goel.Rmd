@@ -512,6 +512,20 @@ About {.storyboard}
 
 ### Documentation 
 
+The packages used to develop this dashboard include the following:   
+
+**shiny**: Builds interactive web-based application using R.    
+**flexdashboard**: R- markdown format for flexible dashboards.     
+**leaflet**: Integrates open-source JavaScript libraries for interactive map in R console.     
+**here**: Uses a reasonable heuristics to find project file.   
+**dplyr**: Fast and convenient way to work woth dataframe both in memory and out of memory.   
+**kableExtra**: Contructs complex table using Kable and formats them.   
+**FinancialMath**: Contains financial math functions and introductory derivative functions.   
+
+The data on the tree benefit is calculated on the basis of **Diameter at breast height**, or **DBH**, which is the standard for measuring trees. DBH refers to the tree diameter measured at 4.5 feet above the ground. DBH for each tree species is collected from [i-tree Eco Model](https://www.itreetools.org/tools/i-tree-eco).    
+The benefits from the trees are calculated using [i-Tree Design V.7.0](https://design.itreetools.org).
+The cost is calculated for the desert south-west region by combining various reasearch and is availble at
+
 ### About the Developer 
 
 Sunayna Goel, also known as *Nina*, is a graduate student at ASU's Program Evaluation and Data Analytics, M.S.. She is working towards enhancing her career. This dashboard is developed as her capstone project for the gradute program.  
