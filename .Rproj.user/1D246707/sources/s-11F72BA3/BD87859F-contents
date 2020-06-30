@@ -128,8 +128,8 @@ convenient.dat <-input.dat %>%
 carbon_convenient <- round((sum(convenient.dat$co2reduction_lb) * input$num_trips))
 #carbon_convenient
 # number of trees needed to offset carbon 
-n_tree_convenient <- round (( as.numeric(input$lbs_carbon)/carbon_convenient) * input$num_trips)
 
+n_tree_convenient <- round (( carbon_convenient/as.numeric(input$lbs_carbon)) * input$num_trips)
 if (n_tree_convenient <= 0)
 {
   n_tree_convenient <- 1
@@ -149,7 +149,7 @@ carbon_correct <- (sum(correct.dat$co2reduction_lb) * input$num_trips)
 
 #carbon_correct
 # can't get input$lbs_carbon to work 
-n_tree_correct <- round ((as.numeric(input$lbs_carbon)/carbon_correct) * input$num_trips)
+n_tree_correct <- round ((carbon_correct/as.numeric(input$lbs_carbon)) * input$num_trips)
 
 if (n_tree_correct <= 0)
 {
