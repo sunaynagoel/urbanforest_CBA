@@ -8,6 +8,7 @@
 "0","#install.packages(""dplyr"")"
 "0","#install.packages (""kableExtra"")"
 "0","#install.packages (""FinancialMath"")"
+"0","#install.packages(""gridExtra"")"
 "0",""
 "0","library(shiny)"
 "0","library(flexdashboard)"
@@ -16,3 +17,5 @@
 "0","library(dplyr)"
 "0","library(kableExtra)"
 "0","library(FinancialMath)"
+"0","library(gridExtra)"
+"0",""

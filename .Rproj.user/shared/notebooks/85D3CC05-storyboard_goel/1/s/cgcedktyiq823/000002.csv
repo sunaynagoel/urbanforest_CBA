@@ -1,0 +1,5 @@
+"0","renderText({"
+"0","  paste(""You have selected number of yearly round tirps as "", input$num_trips, ""and"", input$lbs_carbon, ""lbs as average carbon generated per round trip. You have chosen to offset this carbon with"" , input$species_trees, ""trees."")"
+"0","})"
+"1","<shiny.render.function> 
+"
