@@ -37,9 +37,14 @@ library(gridExtra)
 
 # message=FALSE, warning=FALSE, include=FALSE, echo=FALSE
 # load data 
-dat <- read.csv(here("data/trees-cost-benefit.csv"))
-dat.cost.correct <- read.csv(here("data/costdetails_correct.csv"))
-dat.cost.convenient <- read.csv(here("data/costdetails_convenient.csv"))
+#dat <- read.csv(here("data/trees-cost-benefit.csv"))
+#dat.cost.correct <- read.csv(here("data/costdetails_correct.csv"))
+#dat.cost.convenient <- read.csv(here("data/costdetails_convenient.csv"))
+
+dat <- read.csv(url("https://www.dropbox.com/s/975ozilxf9gbuw0/trees-cost-benefit.csv?raw=1"))
+
+dat.cost.correct <- read.csv(url("https://www.dropbox.com/s/hwx7ped1wfaonsc/costdetails_correct.csv?raw=1"))
+dat.cost.convenient <- read.csv(url("https://www.dropbox.com/s/wt9re71h7whbk8o/costdetails_convenient.csv?raw=1"))
 
 ```
 
@@ -527,7 +532,7 @@ The packages used to develop this dashboard include the following:
 
 The data on the tree benefit is calculated on the basis of **Diameter at breast height**, or **DBH**, which is the standard for measuring trees. DBH refers to the tree diameter measured at 4.5 feet above the ground. DBH for each tree species is collected from [i-tree Eco Model](https://www.itreetools.org/tools/i-tree-eco).    
 The benefits from the trees are calculated using [i-Tree Design V.7.0](https://design.itreetools.org).
-The cost is calculated for the desert south-west region by combining various reasearch and is available at
+The cost is calculated for the desert south-west region by combining various reasearchs. The final project report for this analysis can be found at 
 
 ### About the Developer 
 
