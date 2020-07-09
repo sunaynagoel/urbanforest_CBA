@@ -1,0 +1,3 @@
+"0",""
+"0","selectInput(""species_trees"", label = ""Select the type of tree to be planted:"","
+"0","            choices = c(""Mesquite"", ""Blue Palo Verde"", ""Aleppo Pine"", ""Palo Brea"", ""Chinese Elm""), selected = ""Chinese Elm"")"
