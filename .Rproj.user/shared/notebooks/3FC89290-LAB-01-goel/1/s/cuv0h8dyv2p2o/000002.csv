@@ -1,0 +1,32 @@
+"0","#install.packages(""dplyr"")      ##Libraries"
+"0","#install.packages(""pander"")"
+"0","#install.packages(""kableExtra"")"
+"0","#install.packages(""knitr"")"
+"0","#install.packages(""qwraps2"")"
+"0","#install.packages(""stats"")"
+"0","#install.packages(""stargazer"")"
+"0","library(dplyr)"
+"0","library(pander)"
+"2","
+Attaching package: ‘pander’
+
+"
+"2","The following object is masked from ‘package:shiny’:
+
+    p
+
+"
+"0","library(kableExtra)"
+"0","library(knitr)"
+"0","library(qwraps2)"
+"0","library(stats)"
+"0","library(stargazer)"
+"2","
+Please cite as: 
+
+"
+"2"," Hlavac, Marek (2018). stargazer: Well-Formatted Regression and Summary Statistics Tables.
+"
+"2"," R package version 5.2.2. https://CRAN.R-project.org/package=stargazer 
+
+"
