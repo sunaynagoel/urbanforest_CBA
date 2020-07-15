@@ -31,13 +31,15 @@ library(gridExtra)
 ```
 
 
-```{r global, include=FALSE}
+```{r global, include=FALSE, eval=FALSE}
 # load data 
 # from Drop box 
 #dat <- read.csv(url("https://www.dropbox.com/s/975ozilxf9gbuw0/trees-cost-benefit.csv?raw=1"))
 #dat.cost.correct1 <- read.csv(url("https://www.dropbox.com/s/hwx7ped1wfaonsc/costdetails_correct.csv?raw=1"))
 #dat.cost.convenient1 <- read.csv(url("https://www.dropbox.com/s/wt9re71h7whbk8o/costdetails_convenient.csv?raw=1"))
+```
 
+```{r global2, include=FALSE}
 #from file 
 
 # Benefit data 
@@ -82,14 +84,12 @@ dat <-data.frame (species, year,co2reduction_lb,ben_property_value,ben_storm_wat
 # Convenient Cost Data 
 Cost_First_Year <- c(510,0,0,0,0,0,0)
 Cost_Yearly <- c(0,8,12,2.5,2,0.01,0.01)
-Cost_Details<- c("Conenient installtion cost", "Irrigation Cost","Pruning and Maintenance","Removal and Disposal","Administration and Cleaning","Pest-control and Fertilization","Liability and Legal cost" )
-dat.cost.convenient <- data.frame(Cost_Details,Cost_First_Year,Cost_Yearly)
+dat.cost.convenient <- data.frame(Cost_First_Year,Cost_Yearly)
 
 # Correct Cost Data 
 Cost_First_Year <- c(14000,0,0,0,0,0,0)
 Cost_Yearly <- c(0,8,12,0,2,0.01,0.01)
-Cost_Details <- c("Correct installtion cost","Irrigation Cost","Pruning and Maintenance","Removal and Disposal", "Administration and Cleaning","Pest-control and Fertilization","Liability and Legal cost"   )
-dat.cost.correct <- data.frame(Cost_Details,Cost_First_Year,Cost_Yearly)
+dat.cost.correct <- data.frame(Cost_First_Year,Cost_Yearly)
 
 
 ```
@@ -170,6 +170,7 @@ Column {data-width=500}
 renderTable ({
 input.dat <- dat %>% 
   filter (species %in% tolower(input$species_trees))
+
 # filter type convenient 
 convenient.dat <-input.dat %>% 
   filter (correct_vs_convenient == "convenient") 
@@ -216,8 +217,7 @@ colnames(table.output) <- c("Carbon_generated","Number_of_trees_needed", "Total_
 rownames(table.output) <- c("Convenient Planting","Correct Planting")
 table.output <- data.frame(table.output)
 table.output
-},
-   striped = TRUE, hover = TRUE, bordered = TRUE,
+}, striped = TRUE, hover = TRUE, bordered = TRUE,
    width = "auto", 
   rownames = TRUE, colnames = TRUE
 
@@ -333,7 +333,8 @@ npv.convenient <- NPV (as.numeric(cost.convenient.y0), cashflow.convenient.yearl
 
 npv.convenient <- npv.convenient * input$num_trips
 
-npv.table.convenient <- data.frame ( "Details" = c("Net Present Value of benefits over 30 years period from Planting tree           CONVENIENTLY"), "Value" = npv.convenient)
+npv.table.convenient <- data.frame ( "Details" = c("Net Present Value of benefits over 30 years period from Planting tree           CONVENIENTLY"),
+                            "Value" = npv.convenient)
 
 #kable (npv.table.convenient) %>% 
 #  kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive"), full_width = F, position = "left")
@@ -460,14 +461,16 @@ Column{data-width=600}
 # make a table showing cost in half of story board
 
 
-  kable(dat.cost.correct) %>%
+  #kable(dat.cost.correct1) 
+  kable (dat.cost.correct) %>%
   kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive"), full_width = T, position = "center")
  
 # convenient Installtion 
 # make a table SHowing cost in half of story board 
 
+  #kable(dat.cost.convenient1) 
   kable(dat.cost.convenient) %>%
-  kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive"), full_width = T, position = "center")
+  kable_styling(bootstrap_options = c("striped", "hover", "condensed", "responsive"), full_width = T, position = "center" )
 
 ```
 
