@@ -1,0 +1,21 @@
+"0","# install packages and library"
+"0","#install.packages(""leaflet"")"
+"0","#install.packages(""flexdashboard"")"
+"0","#install.packages(""shiny"")"
+"0","#install.packages(""dplyr"")"
+"0","#install.packages (""kableExtra"")"
+"0","#install.packages (""FinancialMath"")"
+"0","#install.packages(""gridExtra"")"
+"0",""
+"0","library(shiny)"
+"0","library(flexdashboard)"
+"0","library(leaflet)"
+"2","Registered S3 method overwritten by 'htmlwidgets':
+  method           from         
+  print.htmlwidget tools:rstudio
+"
+"0","library(dplyr, warn.conflicts = FALSE)"
+"2","package ‘dplyr’ was built under R version 3.6.2"
+"0","library(kableExtra, warn.conflicts = FALSE)"
+"0","library(FinancialMath, warn.conflicts = FALSE)"
+"0","library(gridExtra, warn.conflicts = FALSE)"

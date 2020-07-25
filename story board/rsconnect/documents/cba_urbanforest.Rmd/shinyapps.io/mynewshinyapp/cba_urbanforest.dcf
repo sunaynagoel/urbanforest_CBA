@@ -1,0 +1,12 @@
+name: cba_urbanforest
+title: cba_urbanforest
+username:
+account: mynewshinyapp
+server: shinyapps.io
+hostUrl: https://api.shinyapps.io/v1
+appId: 2612068
+bundleId: 3435295
+url: https://mynewshinyapp.shinyapps.io/cba_urbanforest/
+when: 1595705177.72014
+asMultiple: FALSE
+asStatic: FALSE

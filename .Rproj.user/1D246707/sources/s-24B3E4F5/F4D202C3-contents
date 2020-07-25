@@ -2,17 +2,17 @@
 title: "Cost-Benefit Analysis of Urban Forest"
 output: 
   flexdashboard::flex_dashboard:
-    storyboard: true
+   # storyboard: true
     social: menu
     source: embed
     runtime: shiny
+   
 ---
 
 ```{r, message=FALSE, warning=FALSE }
-#message=FALSE, warning=FALSE, include=FALSE, echo=FALSE
 # install packages and library
 
-# install.packages("leaflet")
+#install.packages("leaflet")
 #install.packages("flexdashboard")
 #install.packages("shiny")
 #install.packages("dplyr")
@@ -20,13 +20,15 @@ output:
 #install.packages ("FinancialMath")
 #install.packages("gridExtra")
 
+
+
 library(shiny)
 library(flexdashboard)
 library(leaflet)
-library(dplyr)
-library(kableExtra)
-library(FinancialMath)
-library(gridExtra)
+library(dplyr, warn.conflicts = FALSE)
+library(kableExtra, warn.conflicts = FALSE)
+library(FinancialMath, warn.conflicts = FALSE)
+library(gridExtra, warn.conflicts = FALSE)
 
 ```
 
@@ -38,7 +40,7 @@ library(gridExtra)
 #dat.cost.correct1 <- read.csv(url("https://www.dropbox.com/s/hwx7ped1wfaonsc/costdetails_correct.csv?raw=1"))
 #dat.cost.convenient1 <- read.csv(url("https://www.dropbox.com/s/wt9re71h7whbk8o/costdetails_convenient.csv?raw=1"))
 
-#from file 
+#from local file 
 
 # Benefit data 
 species <- rep( c("mesquite","blue palo verde","aleppo pine","palo brea","chinese elm"),each=62)
@@ -91,10 +93,9 @@ Cost_Yearly <- c(0,8,12,0,2,0.01,0.01)
 Cost_Details <- c("Correct installtion cost","Irrigation Cost","Pruning and Maintenance","Removal and Disposal", "Administration and Cleaning","Pest-control and Fertilization","Liability and Legal cost"   )
 dat.cost.correct <- data.frame(Cost_Details,Cost_First_Year,Cost_Yearly)
 
-
 ```
 
-<style type="text/css"> .sidebar { overflow: auto; } </style>
+#<style type="text/css"> .sidebar { overflow: auto; } </style>
 
 Introduction {data-orientation=columns}
 =========================================

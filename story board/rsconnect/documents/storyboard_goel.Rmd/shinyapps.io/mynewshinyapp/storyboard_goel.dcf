@@ -5,8 +5,8 @@ account: mynewshinyapp
 server: shinyapps.io
 hostUrl: https://api.shinyapps.io/v1
 appId: 2551071
-bundleId: 3393297
+bundleId: 3400398
 url: https://mynewshinyapp.shinyapps.io/storyboard_goel/
-when: 1594774670.91438
+when: 1594914971.91004
 asMultiple: FALSE
 asStatic: FALSE
