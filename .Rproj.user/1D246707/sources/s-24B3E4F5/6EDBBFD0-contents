@@ -1,0 +1,990 @@
+---
+title: "DATA <br> CRASHBOARD"
+output: 
+  flexdashboard::flex_dashboard:
+    source: embed
+    smart: false
+runtime: shiny
+---
+
+```{r global, include=FALSE}
+library( flexdashboard )
+library( tidyverse )
+library( ggmap )
+library( leaflet )
+library( viridis )
+library( shiny )
+library( DT )
+library( pander )
+library( knitr )
+library( rsconnect )
+library( ggvis )
+library(kableExtra)
+
+URL <- "https://github.com/DS4PS/Data-Science-Class/blob/master/DATA/TempeTrafficAccidents.rds?raw=true"
+dat <- readRDS(gzcon(url( URL )))
+
+dat <- na.omit(dat) # omit any rows with NAs
+dat$fatal <- dat$Totalfatalities > 0 
+dat$inj <- dat$Totalinjuries > 0 & dat$Totalfatalities == 0
+dat$nohurt <- dat$Totalfatalities + dat$Totalinjuries == 0
+
+date.vec   <- strptime( dat$DateTime, format="%m/%d/%y %H:%M" )
+dat$hour   <- format( date.vec, format="%H" ) %>% as.numeric()
+dat$month  <- format( date.vec, format="%b" )
+dat$day    <- format( date.vec, format="%a" )
+dat$day365 <- format( date.vec, format="%j" )
+dat$week   <- format( date.vec, format="%V" )
+
+dat <- 
+  dat %>% 
+  mutate( time.of.day = case_when( hour >= 6 & hour <= 9 ~ "Morning Commute", 
+                                   hour >= 16 & hour <= 19 ~ "Evening Commute", 
+                                   hour >= 14 & hour <= 15 ~ "School Pickup", 
+                                   hour >= 9 & hour <= 13 ~ "Work", 
+                                   hour >= 20 & hour <= 23 ~ "Night", 
+                                   hour <= 5 & hour >= 0 ~ "Midnight to Dawn") )
+
+dat$harm <- ifelse( dat$Totalinjuries > 0 | dat$Totalfatalities > 0, "Harm", "No Harm" )
+
+dat <- 
+  dat %>% 
+  mutate( d1.substance = case_when( AlcoholUse_Drv1 == "Alcohol" & 
+                                      DrugUse_Drv1 == "No Apparent Influence" ~ "Alcohol", 
+                                   AlcoholUse_Drv1 == "No Apparent Influence" & 
+                                     DrugUse_Drv1 == "Drugs" ~ "Drugs", 
+                                   AlcoholUse_Drv1 == "Alcohol" & 
+                                     DrugUse_Drv1 == "Drugs" ~ "Alcohol and Drugs", 
+                                   AlcoholUse_Drv1 == "No Apparent Influence" & 
+                                     DrugUse_Drv1 == "No Apparent Influence" ~ "No Apparent Influence"))
+
+dat <- 
+  dat %>% 
+  mutate( d2.substance = case_when( AlcoholUse_Drv2 == "Alcohol" & 
+                                      DrugUse_Drv2 == "No Apparent Influence" ~ "Alcohol", 
+                                    AlcoholUse_Drv2 == "No Apparent Influence" & 
+                                      DrugUse_Drv2 == "Drugs" ~ "Drugs", 
+                                    AlcoholUse_Drv2 == "Alcohol" & 
+                                      DrugUse_Drv2 == "Drugs" ~ "Alcohol and Drugs", 
+                                    AlcoholUse_Drv2 == "No Apparent Influence" & 
+                                      DrugUse_Drv2 == "No Apparent Influence" ~ "No Apparent Influence"))
+
+dat<- 
+  dat %>%
+  mutate (age.cat = case_when( dat$Age_Drv1 >= 0 & 
+                            dat$Age_Drv1 <= 18 ~ "Youth", 
+                          dat$Age_Drv1 >= 19 & 
+                            dat$Age_Drv1 <= 25 ~ "Young Adult", 
+                          dat$Age_Drv1 >= 26 & 
+                            dat$Age_Drv1 <= 64 ~ "Adult", 
+                          dat$Age_Drv1 >= 65 ~ "Senior"))
+dat<- 
+  dat %>%
+  mutate (age.cat.d2 = case_when( dat$Age_Drv2 >= 0 & 
+                            dat$Age_Drv2 <= 18 ~ "Youth", 
+                          dat$Age_Drv2 >= 19 & 
+                            dat$Age_Drv2 <= 25 ~ "Young Adult", 
+                          dat$Age_Drv2 >= 26 & 
+                            dat$Age_Drv2 <= 64 ~ "Adult", 
+                          dat$Age_Drv2 >= 65 ~ "Senior"))
+dat <- 
+  dat %>% 
+  mutate( d1.DUI = case_when( AlcoholUse_Drv1 == "Alcohol" & 
+                                      DrugUse_Drv1 == "No Apparent Influence" ~ "Alcohol", 
+                                   AlcoholUse_Drv1 == "No Apparent Influence" & 
+                                     DrugUse_Drv1 == "Drugs" ~ "Drugs", 
+                                   AlcoholUse_Drv1 == "Alcohol" & 
+                                     DrugUse_Drv1 == "Drugs" ~ "Alcohol and Drugs" 
+                                   ))
+
+```
+
+
+
+Traffic Accidents <br> By Day & Time
+=====================================  
+
+Inputs {.sidebar}
+-------------------------------------
+
+```{r}
+checkboxGroupInput("days", label = h3("Day of Week"), 
+    choices = list("Monday"    = "Mon", 
+                   "Tuesday"   = "Tue", 
+                   "Wednesday" = "Wed", 
+                   "Thursday"  = "Thu",
+                   "Friday"    = "Fri",
+                   "Saturday"  = "Sat",
+                   "Sunday"    = "Sun" ),
+    selected = c("Fri","Sat","Sun"))
+
+checkboxGroupInput("hour.v8", label = h3("Time of day"),
+    choices = list("Morning Commute" = "Morning Commute", 
+                   "Work"="Work",
+                   "School Pickup"="School Pickup",
+                   "Evening Commute"="Evening Commute",
+                   "Night"="Night",
+                   "Midnight to Dawn"="Midnight to Dawn"),
+    selected = c("Evening Commute","Night"))
+
+# parameters
+
+```
+
+   
+Outputs
+-------------------------------------
+
+### Traffic Accidents By Day and Time
+
+
+```{r}
+
+#leaflet
+renderLeaflet({
+  
+  days.of.week <- input$days    # vector will all checked values
+  
+  d2 <-
+    dat %>%
+    filter( day %in% input$days, 
+            time.of.day %in% input$hour.v8)
+            #hour >= start.time & hour <= end.time )
+  
+  d2$col.vec <- ifelse( d2$nohurt, "gray20", ifelse(d2$inj, "steelblue", "darkorange") )              
+    
+  point.size <- d2$Totalinjuries + d2$Totalfatalities
+
+  crash.details <- paste0( "Time: ", d2$DateTime, "<br>",
+                     "Total Fatalities: ", d2$Totalfatalities, "<br>",
+                     "Total Injuries: ", d2$Totalinjuries, "<br>",
+                     "Collision type: ", d2$Collisionmanner)
+  
+  tempe <- leaflet( ) %>% 
+              addProviderTiles( "CartoDB.Positron" )  %>%
+              setView( lng=-111.9278, lat=33.39951, zoom=13 )
+  
+  
+  addCircles( tempe, lng=d2$Longitude, lat=d2$Latitude,
+              fillColor=d2$col.vec, fillOpacity=0.5, 
+              stroke=F, radius=50*(1+0.33*point.size),
+              popup=crash.details )
+
+
+})
+```   
+
+
+
+
+
+Driver <br> Characteristics {data-orientation=rows}
+=====================================  
+
+Sidebar {.sidebar}
+-------------------------------------
+Driver Characteristics
+```{r}
+checkboxGroupInput("d1.age.v4", label = h5("Driver 1 Age Group"),
+    choices = list("Youth" = "Youth", 
+                   "Young Adult"="Young Adult",
+                   "Adult"="Adult",
+                   "Senior"="Senior"
+                   ),
+    selected = c("Young Adult"))
+
+
+checkboxGroupInput("d2.age.v4", label = h5("Driver 2 Age Group"),
+    choices = list("Youth" = "Youth", 
+                   "Young Adult"="Young Adult",
+                   "Adult"="Adult",
+                   "Senior"="Senior"
+                   ),
+    selected = c("Young Adult"))
+radioButtons("d1pedcy", label = h4("Driver 1 Transportation"),
+    choices = c("Driver", "Pedalcyclist", "Pedestrian"), selected = c("Driver"))
+radioButtons("d2pedcy", label = h4("Driver 2 Transportation"),
+    choices = c("Driver", "Pedalcyclist", "Pedestrian"), selected = c("Driver"))
+
+```
+
+
+
+
+
+
+Row 
+-------------------------------------
+
+
+### Number of Crashes
+  
+```{r}
+renderValueBox({
+  d2 <-
+    dat %>%
+    filter( age.cat %in% input$d1.age.v4,
+            age.cat.d2 %in% input$d2.age.v4,
+            Unittype_One %in% input$d1pedcy, 
+            Unittype_Two %in% input$d2pedcy )
+  
+  crashes <- count( d2 )
+  valueBox(crashes, 
+           icon = "fa-ambulance",
+           color = ifelse( crashes > 50, "danger", "primary") )
+})
+```
+
+
+### Total Injuries
+  
+```{r}
+renderValueBox({
+  d2 <-
+    dat %>%
+    filter( age.cat %in% input$d1.age.v4,
+            age.cat.d2 %in% input$d2.age.v4,
+            Unittype_One %in% input$d1pedcy, 
+            Unittype_Two %in% input$d2pedcy )
+  
+  total.injuries <- sum( d2$Totalinjuries )
+  valueBox(total.injuries, 
+           icon = "fa-wheelchair",
+           color = ifelse( total.injuries > 30, "danger", "primary" ))
+})
+```
+
+### Total Fatalities
+  
+```{r}
+renderValueBox({
+  d2 <-
+    dat %>%
+    filter( age.cat %in% input$d1.age.v4,
+            age.cat.d2 %in% input$d2.age.v4,
+            Unittype_One %in% input$d1pedcy, 
+            Unittype_Two %in% input$d2pedcy )
+
+  total.fatalities <- sum( d2$Totalfatalities )
+  valueBox( total.fatalities, 
+            icon = "fa-briefcase-medical",
+            color = ifelse(total.fatalities > 10, "danger", "primary"))
+})
+```
+
+
+### Rate of Harm
+  
+```{r}
+renderValueBox({
+  d2 <-
+    dat %>%
+    filter( age.cat %in% input$d1.age.v4,
+            age.cat.d2 %in% input$d2.age.v4,
+            Unittype_One %in% input$d1pedcy, 
+            Unittype_Two %in% input$d2pedcy )
+  
+  rate.of.harm <- round(length(which(d2$harm == "Harm"))/count(d2), 3)
+  valueBox(rate.of.harm, 
+           icon = "fa-pencil",
+           color = ifelse(rate.of.harm > 0.5, "danger", "primary"))
+})
+```
+
+
+
+
+   
+Outputs
+-------------------------------------
+
+### Traffic Accidents by Driver Characteristics
+
+
+```{r}
+
+renderLeaflet({
+  d2 <-
+    dat %>%
+    filter( age.cat %in% input$d1.age.v4,
+            age.cat.d2 %in% input$d2.age.v4,
+            Unittype_One %in% input$d1pedcy, 
+            Unittype_Two %in% input$d2pedcy )
+  
+  d2$col.vec <- ifelse( d2$nohurt, "gray20", ifelse(d2$inj, "steelblue", "darkorange") )              
+    
+  point.size <- d2$Totalinjuries + d2$Totalfatalities
+
+  crash.details <- paste0( "Time: ", d2$DateTime, "<br>",
+                     "Total Fatalities: ", d2$Totalfatalities, "<br>",
+                     "Total Injuries: ", d2$Totalinjuries, "<br>",
+                     "Collision type: ", d2$Collisionmanner)
+  
+  tempe <- leaflet( ) %>% 
+              addProviderTiles( "CartoDB.Positron" )  %>%
+              setView( lng=-111.9278, lat=33.39951, zoom=13 )
+  
+  
+  addCircles( tempe, lng=d2$Longitude, lat=d2$Latitude,
+              fillColor=d2$col.vec, fillOpacity=0.5, 
+              stroke=F, radius=50*(1+0.33*point.size),
+              popup=crash.details )
+
+
+})
+```   
+
+
+
+
+
+
+Two Drivers <br> Comparison {data-orientation=rows}
+=====================================  
+
+Sidebar {.sidebar}
+-------------------------------------
+Driver Characteristics
+```{r}
+checkboxGroupInput("d1.age.v5", label = h6("Driver 1 Age Group"),
+    choices = list("Youth" = "Youth", 
+                   "Young Adult"="Young Adult",
+                   "Adult"="Adult",
+                   "Senior"="Senior"
+                   ),
+    selected = c("Young Adult"))
+
+
+checkboxGroupInput("d2.age.v5", label = h6("Driver 2 Age Group"),
+    choices = list("Youth" = "Youth", 
+                   "Young Adult"="Young Adult",
+                   "Adult"="Adult",
+                   "Senior"="Senior"
+                   ),
+    selected = c("Young Adult"))
+selectInput("driver.1.gender", label = h4("Driver 1 Gender"), 
+    choices = c("Male","Female", "Unknown"), selected = c("Male"))
+selectInput("driver.2.gender", label = h4("Driver 2 Gender"), 
+    choices = c("Male","Female", "Unknown"), selected = c("Male"))
+radioButtons("driver.1.pedcy", label = h4("Driver 1 Transportation"),
+    choices = c("Driver", "Pedalcyclist", "Pedestrian"), selected = c("Driver"))
+radioButtons("driver.2.pedcy", label = h4("Driver 2 Transportation"),
+    choices = c("Driver", "Pedalcyclist", "Pedestrian"), selected = c("Driver"))
+
+```
+
+
+
+
+
+
+Row 
+-------------------------------------
+
+
+### Number of Crashes
+  
+```{r}
+renderValueBox({
+  d2 <-
+    dat %>%
+    filter( age.cat %in% input$d1.age.v5,
+            age.cat.d2 %in% input$d2.age.v5,      
+            Gender_Drv1 %in% input$d1gender, 
+            Gender_Drv2 %in% input$d2gender, 
+            Unittype_One %in% input$d1pedcy, 
+            Unittype_Two %in% input$d2pedcy )
+  
+  crashes <- count( d2 )
+  valueBox(crashes, 
+           icon = "fa-ambulance",
+           color = ifelse( crashes > 50, "danger", "primary") )
+})
+```
+
+
+### Total Injuries
+  
+```{r}
+renderValueBox({
+  d2 <-
+    dat %>%
+    filter( age.cat %in% input$d1.age.v5,
+            age.cat.d2 %in% input$d2.age.v5,
+            Gender_Drv1 %in% input$d1gender, 
+            Gender_Drv2 %in% input$d2gender, 
+            Unittype_One %in% input$d1pedcy, 
+            Unittype_Two %in% input$d2pedcy )
+  
+  total.injuries <- sum( d2$Totalinjuries )
+  valueBox(total.injuries, 
+           icon = "fa-wheelchair",
+           color = ifelse( total.injuries > 30, "danger", "primary" ))
+})
+```
+
+### Total Fatalities
+  
+```{r}
+renderValueBox({
+  d2 <-
+    dat %>%
+    filter( age.cat %in% input$d1.age.v5,
+            age.cat.d2 %in% input$d2.age.v5,
+            Gender_Drv1 %in% input$d1gender, 
+            Gender_Drv2 %in% input$d2gender, 
+            Unittype_One %in% input$d1pedcy, 
+            Unittype_Two %in% input$d2pedcy )
+
+  total.fatalities <- sum( d2$Totalfatalities )
+  valueBox( total.fatalities, 
+            icon = "fa-briefcase-medical",
+            color = ifelse(total.fatalities > 10, "danger", "primary"))
+})
+```
+
+
+### Rate of Harm
+  
+```{r}
+renderValueBox({
+  d2 <-
+    dat %>%
+    filter( age.cat %in% input$d1.age.v5,
+            age.cat.d2 %in% input$d2.age.v5,
+            Gender_Drv1 %in% input$d1gender, 
+            Gender_Drv2 %in% input$d2gender, 
+            Unittype_One %in% input$d1pedcy, 
+            Unittype_Two %in% input$d2pedcy )
+  
+  rate.of.harm <- round(length(which(d2$harm == "Harm"))/count(d2), 3)
+  valueBox(rate.of.harm, 
+           icon = "fa-pencil",
+           color = ifelse(rate.of.harm > 0.5, "danger", "primary"))
+})
+```
+
+
+
+
+   
+Column
+-------------------------------------
+
+### Driver 1
+
+
+```{r}
+
+renderLeaflet({
+  d10 <-
+    dat %>%
+    filter( age.cat %in% input$d1.age.v5,
+            Gender_Drv1 %in% input$driver.1.gender, 
+            Unittype_One %in% input$driver.1.pedcy )
+  
+  d10$col.vec <- ifelse( d10$nohurt, "gray20", ifelse(d10$inj, "steelblue", "darkorange") )              
+    
+  point.size <- d10$Totalinjuries + d10$Totalfatalities
+
+  crash.details <- paste0( "Time: ", d10$DateTime, "<br>",
+                     "Total Fatalities: ", d10$Totalfatalities, "<br>",
+                     "Total Injuries: ", d10$Totalinjuries, "<br>",
+                     "Collision type: ", d10$Collisionmanner)
+  
+  tempe <- leaflet( ) %>% 
+              addProviderTiles( "CartoDB.Positron" )  %>%
+              setView( lng=-111.9278, lat=33.39951, zoom=13 )
+  
+  
+  addCircles( tempe, lng=d10$Longitude, lat=d10$Latitude,
+              fillColor=d10$col.vec, fillOpacity=0.5, 
+              stroke=F, radius=50*(1+0.33*point.size),
+              popup=crash.details )
+
+
+})
+```   
+
+
+
+### Driver 2
+
+
+```{r}
+
+renderLeaflet({
+  d11 <-
+    dat %>%
+    filter (age.cat.d2 %in% input$d2.age.v5,
+            Gender_Drv2 %in% input$driver.2.gender, 
+            Unittype_Two %in% input$driver.2.pedcy )
+  
+  d11$col.vec <- ifelse( d11$nohurt, "gray20", ifelse(d11$inj, "steelblue", "darkorange") )              
+    
+  point.size2 <- d11$Totalinjuries + d11$Totalfatalities
+
+  crash.details2 <- paste0( "Time: ", d11$DateTime, "<br>",
+                     "Total Fatalities: ", d11$Totalfatalities, "<br>",
+                     "Total Injuries: ", d11$Totalinjuries, "<br>",
+                     "Collision type: ", d11$Collisionmanner)
+  
+  tempe2 <- leaflet( ) %>% 
+              addProviderTiles( "CartoDB.Positron" )  %>%
+              setView( lng=-111.9278, lat=33.39951, zoom=13 )
+  
+  
+  addCircles( tempe2, lng=d11$Longitude, lat=d11$Latitude,
+              fillColor=d11$col.vec, fillOpacity=0.5, 
+              stroke=F, radius=50*(1+0.33*point.size2),
+              popup=crash.details2 )
+
+
+})
+```   
+
+DUI Related <br> Accidents {data-orientation=rows}
+=====================================  
+
+Inputs {.sidebar}
+-------------------------------------
+
+```{r}
+
+checkboxGroupInput("driver.1.DUI", label = h5("Type of Influence"),
+    choices = list("Alcohol" = "Alcohol", 
+                   "Drugs" = "Drugs", 
+                   "Alcohol and Drugs"= "Alcohol and Drugs"),
+    selected = c("Drugs","Alcohol","Alcohol and Drugs"))
+
+checkboxGroupInput("days.v2", label = h5("Day of Week"), 
+    choices = list("Monday"    = "Mon", 
+                   "Tuesday"   = "Tue", 
+                   "Wednesday" = "Wed", 
+                   "Thursday"  = "Thu",
+                   "Friday"    = "Fri",
+                   "Saturday"  = "Sat",
+                   "Sunday"    = "Sun" ),
+    selected = c("Fri","Sat","Sun"))
+
+checkboxGroupInput("hour.v3", label = h5("Time of day"),
+    choices = list("Morning Commute" = "Morning Commute", 
+                   "Work"="Work",
+                   "School Pickup"="School Pickup",
+                   "Evening Commute"="Evening Commute",
+                   "Night"="Night",
+                   "Midnight to Dawn"="Midnight to Dawn"),
+    selected = c("Evening Commute","Night"))
+
+checkboxGroupInput("age.v3", label = h5("Age Group"),
+    choices = list("Youth" = "Youth", 
+                   "Young Adult"="Young Adult",
+                   "Adult"="Adult",
+                   "Senior"="Senior"
+                   ),
+    selected = c("Young Adult"))
+
+# parameters
+
+```
+
+
+Row 
+-------------------------------------
+
+### Number of Crashes
+  
+```{r}
+renderValueBox({
+  
+  days.of.week <- input$days.v2    # vector with all checked values
+  d12 <-
+    dat %>%
+    filter( 
+      d1.DUI %in% input$driver.1.DUI,
+      age.cat %in% input$age.v3,
+            day %in% input$days.v2, 
+            time.of.day %in% input$hour.v3
+            ) 
+  crashes <- count( d12 )
+  valueBox(crashes, 
+           icon = "fa-ambulance",
+           color = ifelse( crashes > 50, "danger", "primary") )
+  
+})
+```
+
+### Total Injuries
+  
+```{r}
+renderValueBox({
+days.of.week <- input$days.v2    # vector will all checked values
+  d12 <-
+    dat %>%
+    filter( 
+      d1.DUI %in% input$driver.1.DUI,
+      age.cat %in% input$age.v3,
+      day %in% input$days.v2, 
+      time.of.day %in% input$hour.v3
+       )
+  total.injuries <- sum( d12$Totalinjuries )
+  valueBox(total.injuries, 
+           icon = "fa-wheelchair",
+           color = ifelse( total.injuries > 30, "danger", "primary" ))
+})
+```
+
+### Total Fatalities
+  
+```{r}
+renderValueBox({
+days.of.week <- input$days    # vector will all checked values
+  d12 <-
+    dat %>%
+    filter( 
+      d1.DUI %in% input$driver.1.DUI,
+      age.cat %in% input$age.v3,
+            day %in% input$days, 
+      time.of.day %in% input$hour.v3
+             )
+  total.fatalities <- sum( d12$Totalfatalities )
+  valueBox( total.fatalities, 
+            icon = "fa-briefcase-medical",
+            color = ifelse(total.fatalities > 10, "danger", "primary"))
+})
+```
+
+### Rate of Harm
+  
+```{r}
+renderValueBox({
+  days.of.week <- input$days    # vector will all checked values
+  d12 <-
+    dat %>%
+    filter( 
+      d1.DUI %in% input$driver.1.DUI,
+      age.cat %in% input$age.v3,
+            day %in% input$days, 
+      time.of.day %in% input$hour.v3
+             )
+  rate.of.harm <- round(length(which(d12$harm == "Harm"))/count(d12), 3)
+  valueBox(rate.of.harm, 
+           icon = "fa-pencil",
+           color = ifelse(rate.of.harm > 0.5, "danger", "primary"))
+})
+```
+
+Outputs
+-------------------------------------
+
+### DUI related traffic accidents by day,time and age of driver 1
+
+```{r}
+
+renderLeaflet({
+  
+  days.of.week <- input$days    # vector will all checked values
+  #start.time <- input$hour[1]   # sliderInput lower value
+  #end.time  <-  input$hour[2] 
+  
+  d12 <-
+    dat %>%
+    filter( d1.DUI %in% input$driver.1.DUI,
+            age.cat %in% input$age.v3,
+            day %in% input$days.v2, 
+            time.of.day %in% input$hour.v3
+             # hour >= start.time & hour <= end.time
+            )
+  
+  d12$col.vec <- ifelse( d12$nohurt, "steelblue", ifelse(d12$inj, "darkorange", "red") )              
+    
+  point.size <- (12* (d12$Totalinjuries + d12$Totalfatalities))
+
+  crash.details <- paste0( "Time: ", d12$DateTime, "<br>",
+                     "Total Fatalities: ", d12$Totalfatalities, "<br>",
+                     "Total Injuries: ", d12$Totalinjuries, "<br>",
+                     "Collision type: ", d12$Collisionmanner)
+  
+  tempe <- leaflet( ) %>% 
+              addProviderTiles( "CartoDB.Positron" )  %>%
+              setView( lng=-111.9278, lat=33.39951, zoom=13 )
+  
+  
+  addCircles( tempe, lng=d12$Longitude, lat=d12$Latitude,
+              fillColor=d12$col.vec, fillOpacity=0.5, 
+              stroke=F, radius=50*(1+0.33*point.size),
+              popup=crash.details )
+
+
+})
+```   
+
+
+Conditions At The <br> Time of Accidents {data-orientation=rows}
+=====================================  
+
+Inputs {.sidebar}
+-------------------------------------
+
+```{r}
+checkboxGroupInput("hour.v7", label = h3("Time of day"),
+    choices = list("Morning Commute" = "Morning Commute", 
+                   "Work"="Work",
+                   "School Pickup"="School Pickup",
+                   "Evening Commute"="Evening Commute",
+                   "Night"="Night",
+                   "Midnight to Dawn"="Midnight to Dawn"),
+    selected = c("Evening Commute"))
+
+radioButtons("weather.v7", label = h3("Weather Condition"),
+    choices = c("Clear", "Cloudy", "Dusk"), selected = c("Clear"))
+
+radioButtons("light.v7", label = h3("Light Condition"),
+    choices = c("Day Light", "Dark Light", "Dusk"), selected = c("Dusk"))
+
+# parameters
+
+```
+
+Row 
+-------------------------------------
+
+### Number of Crashes
+  
+```{r}
+renderValueBox({
+  
+  d13 <-
+    dat %>%
+    filter( 
+            time.of.day %in% input$hour.v7,
+            Weather %in% input$weather.v7,
+            Lightcondition %in% input$light.v7
+            ) 
+  crashes <- count( d13 )
+  valueBox(crashes, 
+           icon = "fa-ambulance",
+           color = ifelse( crashes > 50, "danger", "primary") )
+})
+```
+
+### Total Injuries
+  
+```{r}
+renderValueBox({
+d13 <-
+    dat %>%
+    filter( 
+            time.of.day %in% input$hour.v7,
+            Weather %in% input$weather.v7,
+            Lightcondition %in% input$light.v7
+            ) 
+  total.injuries <- sum( d13$Totalinjuries )
+  valueBox(total.injuries, 
+           icon = "fa-wheelchair",
+           color = ifelse( total.injuries > 30, "danger", "primary" ))
+})
+```
+
+### Total Fatalities
+  
+```{r}
+renderValueBox({
+d13 <-
+    dat %>%
+    filter( 
+            time.of.day %in% input$hour.v7,
+            Weather %in% input$weather.v7,
+            Lightcondition %in% input$light.v7
+            ) 
+  total.fatalities <- sum( d13$Totalfatalities )
+  valueBox( total.fatalities, 
+            icon = "fa-briefcase-medical",
+            color = ifelse(total.fatalities > 10, "danger", "primary"))
+})
+```
+
+### Rate of Harm
+  
+```{r}
+renderValueBox({
+  d13 <-
+    dat %>%
+    filter( 
+            time.of.day %in% input$hour.v7,
+            Weather %in% input$ weather.v7,
+            Lightcondition %in% input$light.v7
+            ) 
+  rate.of.harm <- round(length(which(d13$harm == "Harm"))/count(d13), 3)
+  valueBox(rate.of.harm, 
+           icon = "fa-pencil",
+           color = ifelse(rate.of.harm > 0.5, "danger", "primary"))
+})
+```
+
+Outputs
+-------------------------------------
+
+### Conditions at the time of accident
+
+```{r}
+
+renderLeaflet({
+  
+  d13 <-
+    dat %>%
+    filter( 
+            time.of.day %in% input$hour.v7,
+            Weather %in% input$weather.v7,
+            Lightcondition %in% input$light.v7
+            ) 
+  
+  d13$col.vec <- ifelse( d13$nohurt, "steelblue", ifelse(d13$inj, "darkorange", "red") )              
+    
+  point.size <- ( (d13$Totalinjuries + d13$Totalfatalities))
+
+  crash.details <- paste0( "Time: ", d13$DateTime, "<br>",
+                     "Total Fatalities: ", d13$Totalfatalities, "<br>",
+                     "Total Injuries: ", d13$Totalinjuries, "<br>",
+                     "Collision type: ", d13$Collisionmanner)
+  
+  tempe <- leaflet( ) %>% 
+              addProviderTiles( "CartoDB.Positron" )  %>%
+              setView( lng=-111.9278, lat=33.39951, zoom=13 )
+  
+  
+  addCircles( tempe, lng=d13$Longitude, lat=d13$Latitude,
+              fillColor=d13$col.vec, fillOpacity=0.5, 
+              stroke=F, radius=50*(1+0.33*point.size),
+              popup=crash.details )
+
+
+})
+```   
+
+Manner of <br> Collision  
+=====================================  
+
+Inputs {.sidebar}
+-------------------------------------
+
+```{r}
+
+
+checkboxGroupInput("days.v33", label = h3("Day of Week"), 
+    choices = list("Monday"    = "Mon", 
+                   "Tuesday"   = "Tue", 
+                   "Wednesday" = "Wed", 
+                   "Thursday"  = "Thu",
+                   "Friday"    = "Fri",
+                   "Saturday"  = "Sat",
+                   "Sunday"    = "Sun" ),
+    selected = c("Fri","Sat","Sun") )
+
+checkboxGroupInput("hour.v33", label = h5("Time of day"),
+    choices = list("Morning Commute" = "Morning Commute", 
+                   "Work"="Work",
+                   "School Pickup"="School Pickup",
+                   "Evening Commute"="Evening Commute",
+                   "Night"="Night",
+                   "Midnight to Dawn"="Midnight to Dawn"),
+    selected = c("Night"))
+
+
+# parameters
+
+```
+
+   
+Output 
+-------------------------------------
+
+
+###  Table containing Collision Manner by Day and Time 
+
+
+```{r}
+renderTable({
+  
+  days.of.week.v33 <- input$days.v33      # vector will all checked value
+  d.collision.table <-
+    dat %>%
+    filter( day %in% days.of.week.v33,
+            time.of.day %in% input$hour.v33) %>%
+            count(  Collisionmanner ) %>%
+            arrange( -n )
+  as.data.frame( d.collision.table )
+})
+```   
+
+
+About
+===================================== 
+
+
+
+Row 
+-------------------------------------
+
+### About this Dashboard
+
+*Data Crashboard* is a dynamic dashboard related to traffic related crash data for the town of Tempe. The data used here is available at [Tempe Open Data Portal](https://data.tempe.gov/dataset/high-severity-traffic-crashes-1-08). This dashboard is created as a part final assignment for *Data Science* Course. The first four tabs were provided with the template. However, they have been worked upon to create more meaningful and cohesive look. 
+The dashboard contains various tabs to explore traffic related accidents in different ways.    
+1. User have an option to *study accidents* depending upon his/her desired *time of the day*.    
+2. User can study various accident pattern by providing *characteristic of driver*. For e.g.; Age of the driver, transportation used by driver at the time of accident.    
+3. Accident pattern can be compared in a *split view between two drivers* by specifying parameters such age group, gender and mode of transportation.    
+4. *Driving under influence* is one of the major cause of accidents. Under this tab user can study accidents patterns by type of influence, age and day of the week.    
+5. *Weather and light conditions* are often blamed from traffic accidents. Under this view user have a choice to study accident under various light and weather condition depending upon time of the day.    
+6. Lastly table under this tab lets user look at the *collision manner* on particular day of the week.    
+All the data used here is available under data tab, which can be downloaded under different formats. *Source code* is also available. Overall this dashboard provides different insights on traffic related  accidents for Tempe which can be used by several interest group. 
+
+
+### Dashboard Author
+
+Sunayna Goel, also known as *Nina*, is a student of Program Evaluation and Data Analytics, MS at ASU. She is working towards enhancing her career.   
+After finishing her MS in Accounting and Business Administration she worked in Treasury Market for reputable bank, started two of her own companies, and eventually pursued her love for teaching high school mathematics and art. She has extensive knowledge  and understanding of financial and education sectors.  
+Sunayna/Nina is a nature lover who loves to make and teach art. She is involved in various charity and loves to devote her time for the cause she believes in. 
+
+
+Row 
+-------------------------------------
+
+DATA DICTIONARY
+
+
+```{r}
+URL.dd <- "https://raw.githubusercontent.com/DS4PS/cpp-526-fall-2019/master/labs/final-project/TempeTrafficAccidentsDataDictionary.csv"
+data.dictionary <- read.csv( URL.dd, stringsAsFactors=F )
+
+data.dictionary$description <- stringi::stri_trans_general( data.dictionary$description, "latin-ascii" )
+data.dictionary %>%
+  select( column, description ) %>%
+  pander( )
+```
+
+
+
+Data
+=====================================  
+
+```{r}
+# library( DT )
+
+these.buttons <- c( 'copy', 'csv', 'pdf', 'print' )
+
+renderDataTable({
+  datatable(dat[1:100,], filter='bottom', rownames=FALSE, 
+           #options=list( pageLength=5, autoWidth=TRUE ),
+           fillContainer=TRUE, 
+           style="bootstrap",
+           class='table-condensed table-striped',
+           extensions = 'Buttons', 
+           options=list( dom='Bfrtip', 
+                         buttons=these.buttons  ) )
+})
+```
+
+
+
+
+

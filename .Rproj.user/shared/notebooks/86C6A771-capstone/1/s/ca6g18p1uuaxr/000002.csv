@@ -1,0 +1,10 @@
+"0","renderValueBox({"
+"0","  carbon_generated <- round((as.numeric(input$lbs_carbon) * input$num_trips))"
+"0","  valueBox(carbon_generated, "
+"0","           icon = ""fas fa-plane"","
+"0","           color = ifelse( carbon_generated > 50, ""danger"", ""primary"") )"
+"0","}"
+"0","  "
+"0",")"
+"1","<shiny.render.function> 
+"
